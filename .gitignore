@@ -1,0 +1,32 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+db.sqlite3
+.env
+.venv/
+venv/
+env/
+
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDEs / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Media / Static
+media/
+staticfiles/
+
+# Keys / Configs
+firebase-service-account.json
+google-services.json
+*.pt

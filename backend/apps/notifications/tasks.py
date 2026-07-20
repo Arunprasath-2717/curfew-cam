@@ -1,0 +1,90 @@
+"""Notification Celery tasks."""
+from celery import shared_task
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task
+def send_notification_email_async(notification_id):
+    """Send an email for a notification in the background."""
+    from .models import Notification
+    from apps.accounts.emails import send_outpass_notification
+    from django.core.mail import send_mail
+    from django.conf import settings
+    
+    try:
+        notification = Notification.objects.get(id=notification_id)
+        
+        if notification.notification_type == Notification.NotificationType.OUTPASS_STATUS and notification.related_outpass:
+            outpass = notification.related_outpass
+            send_outpass_notification(
+                email=notification.user.email,
+                outpass_status=outpass.status,
+                student_name=notification.user.full_name
+            )
+        else:
+            send_mail(
+                subject=notification.title,
+                message=notification.message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[notification.user.email],
+                fail_silently=True
+            )
+        logger.info(f"Sent email notification for {notification_id}")
+    except Notification.DoesNotExist:
+        logger.error(f"Notification {notification_id} not found")
+        
+
+@shared_task
+def send_notification_digest():
+    """Send daily digest of unread notifications to users."""
+    # Implementation depends on business requirements
+    logger.info("Executing daily notification digest task")
+    pass
+
+
+@shared_task
+def broadcast_notification(notification_id, event_name):
+    """Broadcast notification payload to websocket clients."""
+    from .models import Notification
+    from channels.layers import get_channel_layer
+    from asgiref.sync import async_to_sync
+    
+    try:
+        notification = Notification.objects.get(id=notification_id)
+        channel_layer = get_channel_layer()
+        if not channel_layer:
+            return
+            
+        unread_count = Notification.objects.filter(user=notification.user, is_read=False).count()
+        
+        payload = {
+            "event": event_name,
+            "event_id": str(notification.id),
+            "timestamp": notification.created_at.isoformat(),
+            "priority": notification.priority,
+            "category": notification.category,
+            "delivery_status": notification.delivery_status,
+            "unread_count": unread_count,
+            "metadata": notification.metadata,
+            "data": {
+                "title": notification.title,
+                "message": notification.message
+            }
+        }
+        
+        async_to_sync(channel_layer.group_send)(
+            f"user_{notification.user.id}",
+            {
+                "type": "send_notification",
+                "payload": payload
+            }
+        )
+        
+        if notification.delivery_status == Notification.DeliveryStatus.PENDING:
+            notification.delivery_status = Notification.DeliveryStatus.SENT
+            notification.save(update_fields=['delivery_status'])
+            
+    except Exception as e:
+        logger.exception(f"Failed to broadcast real-time notification {notification_id}: {e}")
