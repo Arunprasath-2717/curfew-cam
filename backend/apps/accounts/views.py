@@ -12,7 +12,7 @@ from apps.common.responses import success_response, error_response, created_resp
 from .serializers import (
     UserRegistrationSerializer, UserLoginSerializer, UserSerializer,
     UpdateProfileSerializer, ChangePasswordSerializer,
-    ForgotPasswordSerializer, VerifyOTPSerializer,
+    VerifyOTPSerializer,
 )
 from .services import register_user, get_tokens_for_user
 from .otp import verify_otp
@@ -175,38 +175,7 @@ class ChangePasswordView(APIView):
         return success_response(message='Password changed successfully')
 
 
-class PasswordResetRequestView(APIView):
-    """Request password reset code."""
-    permission_classes = (permissions.AllowAny,)
 
-    def post(self, request):
-        serializer = ForgotPasswordSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        from .services import request_password_reset
-        session_token = request_password_reset(serializer.validated_data['email'])
-        return success_response(
-            message='If an account exists with this email, you will receive a reset code.',
-            data={'reset_session': session_token}
-        )
-
-
-class PasswordResetVerifyOTPView(APIView):
-    """Verify password reset OTP without resetting the password."""
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        from .services import check_password_reset_otp
-        
-        session_token = request.data.get('session_token')
-        code = request.data.get('code')
-        
-        if not session_token or not code:
-            return error_response('session_token and code are required')
-
-        success, msg = check_password_reset_otp(session_token, code)
-        if not success:
-            return error_response(msg, status_code=status.HTTP_400_BAD_REQUEST)
-        return success_response(message=msg)
 
 
 class VerifyOTPView(APIView):
@@ -234,25 +203,3 @@ class VerifyOTPView(APIView):
 
         return success_response(message='OTP verified successfully')
 
-
-class PasswordResetConfirmView(APIView):
-    """Reset password with token and code."""
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        from .serializers import ResetPasswordConfirmSerializer
-        from .services import confirm_password_reset
-        
-        serializer = ResetPasswordConfirmSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        session_token = serializer.validated_data['session_token']
-        code = serializer.validated_data['code']
-
-        success, msg = confirm_password_reset(
-            session_token, 
-            code, 
-            serializer.validated_data['new_password']
-        )
-        if not success:
-            return error_response(msg, status_code=status.HTTP_400_BAD_REQUEST)
-        return success_response(message=msg)

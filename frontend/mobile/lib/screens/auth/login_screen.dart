@@ -160,16 +160,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Password', style: AppTextStyles.bodySecondary),
-                          GestureDetector(
-                            onTap: () => Navigator.pushNamed(context, '/forgot-password'),
-                            child: Text(
-                              'Forgot password?',
-                              style: AppTextStyles.bodySecondary.copyWith(
-                                color: Theme.of(context).primaryColor,
-                                fontWeight: FontWeight.w600,
+                          if (_selectedTabIndex == 1)
+                            GestureDetector(
+                              onTap: () => Navigator.pushNamed(context, '/warden-setup'),
+                              child: Text(
+                                'First time Warden? Setup Account',
+                                style: AppTextStyles.bodySecondary.copyWith(
+                                  color: Theme.of(context).primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 8),

@@ -102,6 +102,8 @@ class ManageWardensView(APIView):
         profile = user.warden_profile
         profile.employee_id = data['employee_id']
         profile.hostel_name = data.get('hostel_name', '')
+        profile.assigned_year = data.get('assigned_year')
+        profile.is_chief_warden = data.get('is_chief_warden', False)
         profile.save()
         
         AuditLog.objects.create(
@@ -120,6 +122,23 @@ class ManageWardensView(APIView):
 class ManageWardenDetailView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminWarden)
     
+    def patch(self, request, pk):
+        try:
+            warden = WardenProfile.objects.select_related('user').get(pk=pk)
+        except WardenProfile.DoesNotExist:
+            return error_response('Warden not found.', status_code=404)
+            
+        data = request.data
+        if 'hostel_name' in data:
+            warden.hostel_name = data['hostel_name']
+        if 'assigned_year' in data:
+            warden.assigned_year = data['assigned_year']
+        if 'is_chief_warden' in data:
+            warden.is_chief_warden = data['is_chief_warden']
+            
+        warden.save()
+        return success_response(message='Warden profile updated successfully.')
+
     def delete(self, request, pk):
         try:
             warden = WardenProfile.objects.select_related('user').get(pk=pk)
@@ -150,3 +169,79 @@ class AuditLogListView(generics.ListAPIView):
         qs = self.get_queryset()
         serializer = self.get_serializer(qs, many=True)
         return success_response(data=serializer.data)
+
+class RunPromotionView(APIView):
+    """Manually trigger yearly promotion."""
+    permission_classes = (permissions.IsAuthenticated, IsAdminWarden)
+
+    def post(self, request):
+        from apps.students.tasks import run_yearly_promotion
+        counts = run_yearly_promotion()
+        return success_response(
+            data=counts,
+            message='Promotion cycle completed successfully.'
+        )
+
+class WardenSetupRequestView(APIView):
+    """Request OTP for Warden Setup."""
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        from apps.wardens.serializers import WardenSetupRequestSerializer
+        from apps.accounts.services import request_password_reset
+
+        serializer = WardenSetupRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        
+        try:
+            user = User.objects.get(email__iexact=email)
+            if user.role not in [UserRole.WARDEN, UserRole.ADMIN_WARDEN] or user.has_usable_password():
+                return error_response('Invalid request.', status_code=400)
+        except User.DoesNotExist:
+            return error_response('Invalid request.', status_code=400)
+            
+        session_token = request_password_reset(email)
+        return success_response(
+            message='OTP sent to your email.',
+            data={'reset_session': session_token}
+        )
+
+class WardenSetupVerifyOTPView(APIView):
+    """Verify OTP for Warden Setup."""
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        from apps.wardens.serializers import WardenSetupVerifyOTPSerializer
+        from apps.accounts.services import check_password_reset_otp
+
+        serializer = WardenSetupVerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        session_token = serializer.validated_data['session_token']
+        code = serializer.validated_data['code']
+        
+        success, msg = check_password_reset_otp(session_token, code)
+        if not success:
+            return error_response(msg, status_code=400)
+        return success_response(message=msg)
+
+class WardenSetupConfirmView(APIView):
+    """Set new password for Warden Setup."""
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        from apps.wardens.serializers import WardenSetupConfirmSerializer
+        from apps.accounts.services import confirm_password_reset
+
+        serializer = WardenSetupConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        session_token = serializer.validated_data['session_token']
+        code = serializer.validated_data['code']
+        new_password = serializer.validated_data['new_password']
+
+        success, msg = confirm_password_reset(session_token, code, new_password)
+        if not success:
+            return error_response(msg, status_code=400)
+        return success_response(message='Account setup complete. You can now login.')

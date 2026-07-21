@@ -39,6 +39,9 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-onboarding@resend.dev}
     ports:
       - "8000:8000"
     depends_on:
@@ -64,6 +67,9 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-onboarding@resend.dev}
     depends_on:
       - db
       - redis

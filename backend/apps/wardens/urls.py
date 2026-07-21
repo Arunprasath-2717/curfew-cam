@@ -19,5 +19,11 @@ urlpatterns = [
     path('manage/students/<uuid:pk>/', management_views.ManageStudentDetailView.as_view(), name='manage-student-detail'),
     path('manage/wardens/', management_views.ManageWardensView.as_view(), name='manage-wardens'),
     path('manage/wardens/<uuid:pk>/', management_views.ManageWardenDetailView.as_view(), name='manage-warden-detail'),
+    path('manage/run-promotion/', management_views.RunPromotionView.as_view(), name='manage-run-promotion'),
     path('manage/audit-log/', management_views.AuditLogListView.as_view(), name='manage-audit-log'),
+
+    # Warden Setup (Onboarding)
+    path('setup/request/', management_views.WardenSetupRequestView.as_view(), name='setup-request'),
+    path('setup/verify-otp/', management_views.WardenSetupVerifyOTPView.as_view(), name='setup-verify-otp'),
+    path('setup/confirm/', management_views.WardenSetupConfirmView.as_view(), name='setup-confirm'),
 ]

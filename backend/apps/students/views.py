@@ -150,24 +150,9 @@ class StudentViolationsView(APIView):
         violations = list(rejected) + late
         return success_response(data=OutpassSerializer(violations, many=True).data)
 
-import math
-
-def haversine(lat1, lon1, lat2, lon2):
-    """Calculate the great circle distance between two points on the earth."""
-    R = 6371000  # radius of Earth in meters
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
-    delta_phi = math.radians(lat2 - lat1)
-    delta_lambda = math.radians(lon2 - lon1)
-
-    a = math.sin(delta_phi / 2.0) ** 2 + \
-        math.cos(phi1) * math.cos(phi2) * \
-        math.sin(delta_lambda / 2.0) ** 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
 
 class VerifyLocationView(APIView):
-    """Verify if student is on campus based on WiFi SSID or GPS."""
+    """Verify if student is on campus based strictly on WiFi SSID."""
     permission_classes = (permissions.IsAuthenticated, IsStudent)
 
     def post(self, request):
@@ -178,36 +163,53 @@ class VerifyLocationView(APIView):
             return error_response('Student profile not found', status_code=404)
 
         wifi_ssid = request.data.get('wifi_ssid', '').strip('\"\'')
-        latitude = request.data.get('latitude')
-        longitude = request.data.get('longitude')
 
         campus = Campus.objects.first()
         if not campus:
             return error_response('Campus configuration not found', status_code=500)
+            
+        if not campus.campus_wifi_ssid:
+            return error_response('WiFi verification not yet configured, contact admin', status_code=400)
 
         on_campus = False
         method = 'none'
 
-        if campus.campus_wifi_ssid and wifi_ssid == campus.campus_wifi_ssid:
+        if wifi_ssid == campus.campus_wifi_ssid:
             on_campus = True
             method = 'wifi'
-        elif latitude is not None and longitude is not None and campus.campus_latitude and campus.campus_longitude:
-            try:
-                distance = haversine(
-                    float(latitude), float(longitude),
-                    campus.campus_latitude, campus.campus_longitude
-                )
-                if distance <= campus.geofence_radius_meters:
-                    on_campus = True
-                    method = 'gps'
-            except (ValueError, TypeError):
-                pass
-
-        if not on_campus:
-            method = 'both_failed'
+        else:
+            method = 'wifi_failed'
 
         profile.is_on_campus = on_campus
         profile.save()
+        
+        # If successfully on campus, we should mark their active outpass as returned
+        # and trigger a silent notification to the warden. (Task 2)
+        if on_campus:
+            from apps.outpass.models import Outpass
+            from apps.notifications.services import NotificationService
+            from apps.notifications.models import Notification
+            from django.utils import timezone
+            
+            active_outpass = Outpass.objects.filter(student=profile, status=Outpass.Status.ACTIVE).first()
+            if active_outpass:
+                active_outpass.status = Outpass.Status.RETURNED
+                active_outpass.actual_return_time = timezone.now()
+                active_outpass.auto_detect_method = Outpass.AutoDetectMethod.WIFI
+                active_outpass.save(update_fields=['status', 'actual_return_time', 'auto_detect_method'])
+                
+                # Notify warden
+                if active_outpass.approved_by:
+                    NotificationService.create(
+                        user=active_outpass.approved_by.user,
+                        title=f'Student Returned: {profile.user.full_name}',
+                        message=f'{profile.user.full_name} ({profile.register_number}) has checked in on campus via WiFi verification.',
+                        event_name='OUTPASS_RETURNED_WARDEN',
+                        category=Notification.NotificationCategory.OUTPASS,
+                        notification_type=Notification.NotificationType.OUTPASS_STATUS,
+                        priority=Notification.NotificationPriority.NORMAL,
+                        related_outpass=active_outpass,
+                    )
 
         return success_response(
             data={'on_campus': on_campus, 'method': method},

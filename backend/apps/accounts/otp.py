@@ -28,7 +28,7 @@ def verify_otp(email, otp, purpose='email_verification'):
     stored = cache.get(key)
     if stored is None:
         return False, 'OTP expired or not found'
-    if stored != otp:
+    if stored != str(otp):
         return False, 'Invalid OTP'
     cache.delete(key)
     return True, 'OTP verified'

@@ -28,9 +28,13 @@ class WardenDashboardView(APIView):
 
         students_qs = StudentProfile.objects.all()
         outpass_qs = Outpass.objects.all()
-        if hostel and request.user.role != UserRole.ADMIN_WARDEN:
-            students_qs = students_qs.filter(hostel_block=hostel)
-            outpass_qs = outpass_qs.filter(student__hostel_block=hostel)
+        if warden_profile and not warden_profile.is_chief_warden and request.user.role != UserRole.ADMIN_WARDEN:
+            if hostel:
+                students_qs = students_qs.filter(hostel_block=hostel)
+                outpass_qs = outpass_qs.filter(student__hostel_block=hostel)
+            if warden_profile.assigned_year:
+                students_qs = students_qs.filter(year=warden_profile.assigned_year)
+                outpass_qs = outpass_qs.filter(student__year=warden_profile.assigned_year)
 
         today = timezone.now().date()
         total = students_qs.count()
@@ -60,8 +64,11 @@ class PendingOutpassListView(generics.ListAPIView):
             'student__user', 'approved_by__user'
         ).order_by('created_at')
         warden_profile = getattr(self.request.user, 'warden_profile', None)
-        if warden_profile and self.request.user.role != UserRole.ADMIN_WARDEN:
-            qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
+        if warden_profile and not warden_profile.is_chief_warden and self.request.user.role != UserRole.ADMIN_WARDEN:
+            if warden_profile.hostel_name:
+                qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
+            if warden_profile.assigned_year:
+                qs = qs.filter(student__year=warden_profile.assigned_year)
         return qs
 
     def list(self, request, *args, **kwargs):
@@ -164,8 +171,11 @@ class LateStudentsView(generics.ListAPIView):
 
         qs = Outpass.objects.filter(status=Outpass.Status.ACTIVE).select_related('student__user')
         warden_profile = getattr(self.request.user, 'warden_profile', None)
-        if warden_profile and self.request.user.role != UserRole.ADMIN_WARDEN:
-            qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
+        if warden_profile and not warden_profile.is_chief_warden and self.request.user.role != UserRole.ADMIN_WARDEN:
+            if warden_profile.hostel_name:
+                qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
+            if warden_profile.assigned_year:
+                qs = qs.filter(student__year=warden_profile.assigned_year)
         # Filter in Python since is_late is a property
         return [op for op in qs if op.is_late]
 
@@ -207,8 +217,11 @@ class WardenReportsView(APIView):
         today = timezone.now().date()
 
         outpass_qs = Outpass.objects.all()
-        if warden_profile and request.user.role != UserRole.ADMIN_WARDEN:
-            outpass_qs = outpass_qs.filter(student__hostel_block=warden_profile.hostel_name)
+        if warden_profile and not warden_profile.is_chief_warden and request.user.role != UserRole.ADMIN_WARDEN:
+            if warden_profile.hostel_name:
+                outpass_qs = outpass_qs.filter(student__hostel_block=warden_profile.hostel_name)
+            if warden_profile.assigned_year:
+                outpass_qs = outpass_qs.filter(student__year=warden_profile.assigned_year)
 
         if period == 'daily':
             filtered = outpass_qs.filter(created_at__date=today)
@@ -262,8 +275,11 @@ class WardenOutpassHistoryView(generics.ListAPIView):
             'student__user', 'approved_by__user'
         ).order_by('-created_at')
         warden_profile = getattr(self.request.user, 'warden_profile', None)
-        if warden_profile and self.request.user.role != UserRole.ADMIN_WARDEN:
-            qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
+        if warden_profile and not warden_profile.is_chief_warden and self.request.user.role != UserRole.ADMIN_WARDEN:
+            if warden_profile.hostel_name:
+                qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
+            if warden_profile.assigned_year:
+                qs = qs.filter(student__year=warden_profile.assigned_year)
         return qs
 
     def list(self, request, *args, **kwargs):

@@ -13,7 +13,4 @@ urlpatterns = [
     path('profile/', views.ProfileUpdateView.as_view(), name='profile-update'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
     path('verify-otp/', views.VerifyOTPView.as_view(), name='verify-otp'),
-    path('password-reset/request/', views.PasswordResetRequestView.as_view(), name='password-reset-request'),
-    path('password-reset/verify-otp/', views.PasswordResetVerifyOTPView.as_view(), name='password-reset-verify-otp'),
-    path('password-reset/confirm/', views.PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
 ]

@@ -6,14 +6,14 @@ import '../../widgets/input_field.dart';
 import '../../widgets/primary_button.dart';
 import '../../providers/auth_service.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+class WardenSetupRequestScreen extends StatefulWidget {
+  const WardenSetupRequestScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  State<WardenSetupRequestScreen> createState() => _WardenSetupRequestScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _WardenSetupRequestScreenState extends State<WardenSetupRequestScreen> {
   final TextEditingController _emailController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
@@ -38,7 +38,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _successMessage = null;
     });
 
-    final response = await AuthService.forgotPassword(email);
+    final response = await AuthService.wardenSetupRequest(email);
 
     if (!mounted) return;
 
@@ -49,7 +49,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       final sessionToken = response['data']?['reset_session'];
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
-          Navigator.pushNamed(context, '/forgot-otp', arguments: {
+          Navigator.pushNamed(context, '/warden-setup-otp', arguments: {
             'email': email,
             'sessionToken': sessionToken,
           });
@@ -96,12 +96,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               
               // Text Content
               Text(
-                'Reset Password',
+                'Warden Setup',
                 style: AppTextStyles.screenTitle.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter your registered email to receive a secure verification code.',
+                'Enter your email to receive an onboarding verification code.',
                 style: AppTextStyles.bodyMain.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)),
               ),
               
@@ -145,7 +145,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Remember your password? ',
+                      'Already setup? ',
                       style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)),
                     ),
                     GestureDetector(

@@ -41,6 +41,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           _user!['student_profile'] = {
             'register_number': _user!['rollNo'] ?? 'N/A',
             'room_number': _user!['room'] ?? 'N/A',
+            'department': _user!['department'] ?? 'N/A',
+            'outpass_stats': _user!['outpass_stats'] ?? {'total': 0, 'approved': 0, 'rejected': 0},
           };
           _avatarUrl = _user!['avatar'] as String?;
         }
@@ -87,7 +89,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       ),
                       child: AvatarWidget(
                         avatarUrl: _avatarUrl,
-                        initials: safeInitial(_user?['first_name'], fallback: 'U'),
+                        initials: safeInitial(_user?['email'], fallback: 'U'),
                         radius: 56,
                         backgroundColor: Theme.of(context).primaryColor,
                         textColor: Theme.of(context).scaffoldBackgroundColor,
@@ -128,11 +130,11 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               // Stats
               Row(
                 children: [
-                  Expanded(child: _buildStatBox(context, 'Total', '12', Theme.of(context).primaryColor)),
+                  Expanded(child: _buildStatBox(context, 'Total', '${_user!['student_profile']?['outpass_stats']?['total'] ?? 0}', Theme.of(context).primaryColor)),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildStatBox(context, 'Approved', '10', const Color(0xFF22C55E))),
+                  Expanded(child: _buildStatBox(context, 'Approved', '${_user!['student_profile']?['outpass_stats']?['approved'] ?? 0}', const Color(0xFF22C55E))),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildStatBox(context, 'Rejected', '2', Theme.of(context).colorScheme.error)),
+                  Expanded(child: _buildStatBox(context, 'Rejected', '${_user!['student_profile']?['outpass_stats']?['rejected'] ?? 0}', Theme.of(context).colorScheme.error)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -166,7 +168,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                               children: [
                                 Text('DEPARTMENT', style: AppTextStyles.badgeCaps.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
                                 const SizedBox(height: 4),
-                                Text('Computer Science & Engineering', style: AppTextStyles.cardTitle),
+                                Text('${_user!['student_profile']?['department'] ?? 'N/A'}', style: AppTextStyles.cardTitle),
                               ],
                             ),
                           ),
@@ -176,45 +178,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        border: Border.all(color: Theme.of(context).dividerColor),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.secondary,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(Icons.calendar_today, color: Theme.of(context).scaffoldBackgroundColor),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('BATCH', style: AppTextStyles.badgeCaps.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
-                                const SizedBox(height: 4),
-                                Text('Class of 2024 (Semester 8)', style: AppTextStyles.cardTitle),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+
               
               // Settings
               Container(

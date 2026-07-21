@@ -4,14 +4,14 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/primary_button.dart';
 import '../../providers/auth_service.dart';
 
-class ForgotOtpScreen extends StatefulWidget {
-  const ForgotOtpScreen({super.key});
+class WardenSetupOtpScreen extends StatefulWidget {
+  const WardenSetupOtpScreen({super.key});
 
   @override
-  State<ForgotOtpScreen> createState() => _ForgotOtpScreenState();
+  State<WardenSetupOtpScreen> createState() => _WardenSetupOtpScreenState();
 }
 
-class _ForgotOtpScreenState extends State<ForgotOtpScreen> {
+class _WardenSetupOtpScreenState extends State<WardenSetupOtpScreen> {
   final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false;
@@ -40,7 +40,7 @@ class _ForgotOtpScreenState extends State<ForgotOtpScreen> {
   Future<void> _handleVerify() async {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args == null || args['email'] == null || args['sessionToken'] == null) {
-      setState(() => _errorMessage = 'Invalid session. Please restart password reset.');
+      setState(() => _errorMessage = 'Invalid session. Please restart setup.');
       return;
     }
 
@@ -56,13 +56,13 @@ class _ForgotOtpScreenState extends State<ForgotOtpScreen> {
     });
 
     try {
-      final res = await AuthService.verifyResetOtp(args['sessionToken'], code);
+      final res = await AuthService.wardenSetupVerifyOtp(args['sessionToken'], code);
       if (!mounted) return;
 
       if (res['success'] == true) {
         Navigator.pushReplacementNamed(
           context, 
-          '/forgot-reset',
+          '/warden-setup-confirm',
           arguments: {
             'email': args['email'], 
             'sessionToken': args['sessionToken'],
@@ -115,7 +115,7 @@ class _ForgotOtpScreenState extends State<ForgotOtpScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Enter Reset Code', style: AppTextStyles.screenTitle),
+                    Text('Enter Setup Code', style: AppTextStyles.screenTitle),
                     const SizedBox(height: 8),
                     Text.rich(TextSpan(text: 'Sent to ', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)), children: [
                       TextSpan(text: email, style: AppTextStyles.bodySecondary.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
@@ -164,9 +164,9 @@ class _ForgotOtpScreenState extends State<ForgotOtpScreen> {
                         Text('Didn\'t receive the code?', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
                         TextButton(
                           onPressed: () async {
-                            await AuthService.forgotPassword(email);
+                            await AuthService.wardenSetupRequest(email);
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reset code resent!')));
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Setup code resent!')));
                             }
                           }, 
                           child: Row(mainAxisSize: MainAxisSize.min, children: [

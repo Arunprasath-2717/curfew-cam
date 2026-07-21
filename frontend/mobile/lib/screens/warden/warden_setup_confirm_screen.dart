@@ -4,18 +4,20 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/input_field.dart';
 import '../../widgets/primary_button.dart';
 import '../../providers/auth_service.dart';
+import '../auth/login_screen.dart';
 
-class ForgotResetScreen extends StatefulWidget {
-  const ForgotResetScreen({super.key});
+class WardenSetupConfirmScreen extends StatefulWidget {
+  const WardenSetupConfirmScreen({super.key});
 
   @override
-  State<ForgotResetScreen> createState() => _ForgotResetScreenState();
+  State<WardenSetupConfirmScreen> createState() => _WardenSetupConfirmScreenState();
 }
 
-class _ForgotResetScreenState extends State<ForgotResetScreen> {
+class _WardenSetupConfirmScreenState extends State<WardenSetupConfirmScreen> {
   String _password = '';
   String _confirmPassword = '';
   bool _isLoading = false;
+  bool _isSuccess = false;
   String? _errorMessage;
   
   Color _getStrengthColor() {
@@ -61,13 +63,28 @@ class _ForgotResetScreenState extends State<ForgotResetScreen> {
       _errorMessage = null;
     });
 
-    final response = await AuthService.resetPassword(args['sessionToken'], args['code'], _password);
+    final response = await AuthService.wardenSetupConfirm(args['sessionToken'], args['code'], _password);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (response['success'] == true) {
-      Navigator.pushReplacementNamed(context, '/forgot-success');
+      setState(() => _isSuccess = true);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 400),
+            ),
+            (route) => false,
+          );
+        }
+      });
     } else {
       setState(() => _errorMessage = response['message'] ?? 'Failed to reset password');
     }
@@ -86,19 +103,38 @@ class _ForgotResetScreenState extends State<ForgotResetScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
-          child: Column(
-            children: [
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _isSuccess 
+            ? Center(
+                key: const ValueKey('success'),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 96, height: 96,
+                      decoration: BoxDecoration(color: const Color(0xFF22C55E).withOpacity(0.1), shape: BoxShape.circle),
+                      child: Icon(Icons.check_circle, size: 64, color: const Color(0xFF22C55E)),
+                    ),
+                    const SizedBox(height: 24),
+                    Text('Setup Complete!', style: AppTextStyles.screenTitle.copyWith(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
+                key: const ValueKey('form'),
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+                child: Column(
+                  children: [
               Container(
                 padding: EdgeInsets.all(32),
                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).dividerColor)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('New Password', style: AppTextStyles.screenTitle),
+                    Text('Set Password', style: AppTextStyles.screenTitle),
                     const SizedBox(height: 8),
-                    Text('Your identity has been verified. Please choose a secure password to protect your CurfewCam account.', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
+                    Text('Your identity has been verified. Please set a secure password to access your Warden account.', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
                     const SizedBox(height: 24),
                     
                     if (_errorMessage != null)
@@ -108,7 +144,7 @@ class _ForgotResetScreenState extends State<ForgotResetScreen> {
                       ),
 
                     InputField(
-                      label: 'New Password',
+                      label: 'Set Password',
                       hintText: 'Enter new password',
                       isPassword: true,
                       onChanged: (val) => setState(() => _password = val),
@@ -143,7 +179,7 @@ class _ForgotResetScreenState extends State<ForgotResetScreen> {
                     ),
                     const SizedBox(height: 24),
                     PrimaryButton(
-                      label: 'Update Password', 
+                      label: 'Complete Setup', 
                       icon: Icons.lock_reset, 
                       isLoading: _isLoading,
                       onPressed: _handleReset,
@@ -161,6 +197,7 @@ class _ForgotResetScreenState extends State<ForgotResetScreen> {
               ]),
             ],
           ),
+        ),
         ),
       ),
     );

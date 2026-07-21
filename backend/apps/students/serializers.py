@@ -14,15 +14,26 @@ class GuardianSerializer(serializers.ModelSerializer):
 class StudentProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     guardians = GuardianSerializer(many=True, read_only=True)
+    outpass_stats = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentProfile
         fields = (
             'id', 'user', 'register_number', 'department', 'year',
             'semester', 'hostel_block', 'room_number', 'face_image',
-            'is_in_hostel', 'guardians', 'created_at',
+            'is_in_hostel', 'guardians', 'created_at', 'outpass_stats',
         )
         read_only_fields = ('id', 'created_at', 'is_in_hostel')
+
+    def get_outpass_stats(self, obj):
+        from apps.outpass.models import Outpass
+        qs = obj.outpasses.all()
+        return {
+            'total': qs.count(),
+            'approved': qs.filter(status=Outpass.Status.APPROVED).count(),
+            'rejected': qs.filter(status=Outpass.Status.REJECTED).count(),
+            'returned': qs.filter(status=Outpass.Status.RETURNED).count(),
+        }
 
 
 class StudentProfileCreateSerializer(serializers.ModelSerializer):

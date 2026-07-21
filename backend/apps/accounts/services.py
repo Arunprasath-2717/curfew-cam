@@ -125,8 +125,10 @@ def request_password_reset(email):
     signer = TimestampSigner(salt='password-reset')
     session_token = signer.sign(str(user.id))
 
-    # Send only the 6-digit code via email
-    send_password_reset_email(user.email, code)
+    # Send only the 6-digit code via email using Celery
+    from .tasks import send_password_reset_email_task
+    send_password_reset_email_task.delay(user.email, code)
+    
     return session_token
 
 
@@ -144,7 +146,7 @@ def check_password_reset_otp(session_token, code):
     cache_key = f'reset_code:{user_id_str}'
     stored_code = cache.get(cache_key)
     
-    if stored_code is None or stored_code != code:
+    if stored_code is None or stored_code != str(code):
         return False, "Invalid or expired reset code"
         
     return True, "Valid code"
@@ -166,7 +168,7 @@ def confirm_password_reset(session_token, code, new_password):
     cache_key = f'reset_code:{user_id_str}'
     stored_code = cache.get(cache_key)
     
-    if stored_code is None or stored_code != code:
+    if stored_code is None or stored_code != str(code):
         return False, "Reset link expired or invalid — request a new one"
 
     try:

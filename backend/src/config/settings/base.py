@@ -229,6 +229,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'apps.notifications.tasks.send_notification_digest',
         'schedule': 3600.0,
     },
+    'yearly-promotion': {
+        'task': 'apps.students.tasks.run_yearly_promotion',
+        'schedule': float(env('PROMOTION_INTERVAL_SECONDS', default=31536000)),
+    },
 }
 
 # ─── Cache (Redis) ────────────────────────────────────────────────
@@ -255,8 +259,10 @@ CHANNEL_LAYERS = {
 
 # ─── Email ────────────────────────────────────────────────────────
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@curfewcam.com')
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 
 # ─── QR / Security ───────────────────────────────────────────────
+RESEND_API_KEY = env('RESEND_API_KEY', default='')
 QR_HMAC_SECRET = env('QR_HMAC_SECRET', default='change-me')
 QR_EXPIRY_HOURS = 24
 

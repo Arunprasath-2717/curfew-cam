@@ -82,10 +82,6 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
 
-class ForgotPasswordSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-
-
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6, min_length=6)
@@ -94,14 +90,3 @@ class VerifyOTPSerializer(serializers.Serializer):
         default='email_verification',
     )
 
-
-class ResetPasswordConfirmSerializer(serializers.Serializer):
-    session_token = serializers.CharField()
-    code = serializers.CharField(max_length=6, min_length=6)
-    new_password = serializers.CharField(write_only=True, min_length=8)
-    new_password2 = serializers.CharField(write_only=True)
-
-    def validate(self, attrs):
-        if attrs['new_password'] != attrs['new_password2']:
-            raise serializers.ValidationError({'new_password': "Passwords don't match."})
-        return attrs

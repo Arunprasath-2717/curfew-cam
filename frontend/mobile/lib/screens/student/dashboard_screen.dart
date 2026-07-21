@@ -5,7 +5,6 @@ import '../../widgets/bottom_nav_student.dart';
 import '../../widgets/status_chip.dart';
 import '../../providers/outpass_provider.dart';
 import '../../providers/auth_service.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
@@ -83,51 +82,19 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
     final status = await Permission.location.request();
     if (status.isDenied || status.isPermanentlyDenied) return;
     
-    final method = await shouldMarkAsIn();
-    if (method != null) {
-      final outpassId = _activeRequest!['id'];
-      await _outpassProvider.markReturn(outpassId, method);
-      _fetchData();
-    }
-  }
-
-  Future<String?> shouldMarkAsIn() async {
-    if (await isOnCollegeWifi()) {
-      return "wifi";
-    }
-    if (await isWithinCampus()) {
-      return "geofence";
-    }
-    return null;
-  }
-
-  Future<bool> isOnCollegeWifi() async {
     try {
       final info = NetworkInfo();
-      String? wifiName = await info.getWifiName();
+      final wifiName = await info.getWifiName();
       if (wifiName != null) {
-        wifiName = wifiName.replaceAll('"', '');
-        if (wifiName == COLLEGE_WIFI_SSID) {
-          return true;
+        final res = await _outpassProvider.verifyLocation({
+          'wifi_ssid': wifiName,
+        });
+        if (res['success'] == true && res['data']?['on_campus'] == true) {
+          _fetchData();
         }
       }
     } catch (e) {
       // Ignore
-    }
-    return false;
-  }
-
-  Future<bool> isWithinCampus() async {
-    // Existing polygon-based geofence check fallback
-    try {
-      final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      final res = await _outpassProvider.verifyLocation({
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-      });
-      return res['success'] == true && res['data']?['on_campus'] == true;
-    } catch (e) {
-      return false;
     }
   }
 
@@ -149,26 +116,25 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
     }
 
     try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
       final info = NetworkInfo();
       final wifiName = await info.getWifiName();
 
       final res = await _outpassProvider.verifyLocation({
-        'latitude': position.latitude,
-        'longitude': position.longitude,
         'wifi_ssid': wifiName,
       });
 
       if (mounted) {
         final success = res['success'] == true && res['data']?['on_campus'] == true;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(res['message'] ?? (success ? 'Verified on campus' : 'Failed to verify')),
-            backgroundColor: success ? AppColors.success : AppColors.error,
-          ),
-        );
+        if (success) {
+          _fetchData(); // Refresh UI to show Returned status
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? 'Failed to verify WiFi SSID.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

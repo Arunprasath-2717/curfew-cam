@@ -8,4 +8,4 @@ done
 echo "Redis started"
 
 echo "Starting Celery worker..."
-exec celery -A src.config worker -l info
+exec celery -A src.config worker -B -l info

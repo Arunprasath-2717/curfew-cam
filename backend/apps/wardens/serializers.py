@@ -46,3 +46,23 @@ class ManageWardenSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=8, required=False)
     employee_id = serializers.CharField(max_length=30)
     hostel_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    assigned_year = serializers.IntegerField(required=False, allow_null=True)
+    is_chief_warden = serializers.BooleanField(required=False, default=False)
+
+class WardenSetupRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class WardenSetupVerifyOTPSerializer(serializers.Serializer):
+    session_token = serializers.CharField()
+    code = serializers.CharField(max_length=6, min_length=6)
+
+class WardenSetupConfirmSerializer(serializers.Serializer):
+    session_token = serializers.CharField()
+    code = serializers.CharField(max_length=6, min_length=6)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password2']:
+            raise serializers.ValidationError({'new_password': "Passwords don't match."})
+        return attrs

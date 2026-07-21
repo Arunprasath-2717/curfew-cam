@@ -21,7 +21,10 @@ def check_late_returns():
             timezone.datetime.combine(outpass.expected_return_date, outpass.expected_return_time)
         )
         if now > expected:
-            # Mark as late and notify
+            # Mark as overdue and notify
+            outpass.status = Outpass.Status.OVERDUE
+            outpass.save(update_fields=['status'])
+            
             NotificationService.create(
                 user=outpass.student.user,
                 title='Late Return Alert',
@@ -43,7 +46,7 @@ def check_late_returns():
                     priority=Notification.NotificationPriority.HIGH,
                     related_outpass=outpass,
                 )
-            logger.warning('Late return detected: %s', outpass)
+            logger.warning('Late return detected (marked overdue): %s', outpass)
 
 
 @shared_task

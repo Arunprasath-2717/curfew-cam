@@ -5,7 +5,9 @@ import '../screens/auth/onboarding_one_screen.dart';
 import '../screens/auth/onboarding_two_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
-import '../screens/auth/forgot_password_screen.dart';
+import '../screens/warden/warden_setup_request_screen.dart';
+import '../screens/warden/warden_setup_otp_screen.dart';
+import '../screens/warden/warden_setup_confirm_screen.dart';
 
 import '../screens/student/dashboard_screen.dart';
 import '../screens/student/request_step_1_screen.dart';
@@ -24,9 +26,6 @@ import '../screens/student/late_warning_screen.dart';
 import '../screens/student/pass_rejected_screen.dart';
 import '../screens/student/pass_expired_screen.dart';
 import '../screens/student/help_faq_screen.dart';
-import '../screens/auth/forgot_otp_screen.dart';
-import '../screens/auth/forgot_reset_screen.dart';
-import '../screens/auth/forgot_success_screen.dart';
 
 import '../screens/warden/analytics_overview_screen.dart';
 import '../screens/warden/approve_confirmation_screen.dart';
@@ -76,10 +75,9 @@ class AppRouter {
   
   static const String login = '/login';
   static const String register = '/register';
-  static const String forgotPassword = '/forgot-password';
-  static const String forgotOtp = '/forgot-otp';
-  static const String forgotReset = '/forgot-reset';
-  static const String forgotSuccess = '/forgot-success';
+  static const String wardenSetup = '/warden-setup';
+  static const String wardenSetupOtp = '/warden-setup-otp';
+  static const String wardenSetupConfirm = '/warden-setup-confirm';
   
   static const String studentDashboard = '/student-dashboard';
   static const String requestStep1 = '/request-step1';
@@ -146,10 +144,9 @@ class AppRouter {
         onboarding2: (context) => const OnboardingTwoScreen(),
         login: (context) => const LoginScreen(),
         register: (context) => const RegisterScreen(),
-        forgotPassword: (context) => const ForgotPasswordScreen(),
-        forgotOtp: (context) => const ForgotOtpScreen(),
-        forgotReset: (context) => const ForgotResetScreen(),
-        forgotSuccess: (context) => const ForgotSuccessScreen(),
+        wardenSetup: (context) => const WardenSetupRequestScreen(),
+        wardenSetupOtp: (context) => const WardenSetupOtpScreen(),
+        wardenSetupConfirm: (context) => const WardenSetupConfirmScreen(),
         studentDashboard: (context) => const StudentDashboardScreen(),
         requestStep1: (context) => const RequestStep1Screen(),
         requestStep2: (context) {

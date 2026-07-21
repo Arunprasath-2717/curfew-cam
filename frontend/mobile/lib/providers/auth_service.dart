@@ -346,10 +346,6 @@ class AuthService {
     });
   }
 
-  static Future<Map<String, dynamic>> forgotPassword(String email) async {
-    return _sendJsonRequest('POST', '/auth/password-reset/request/', body: {'email': email});
-  }
-
   static Future<Map<String, dynamic>> verifyOtp(String email, String otp) async {
     // This is still used for email verification during sign-up
     return _sendJsonRequest(
@@ -359,22 +355,26 @@ class AuthService {
     );
   }
 
-  static Future<Map<String, dynamic>> verifyResetOtp(String sessionToken, String code) async {
+  static Future<Map<String, dynamic>> wardenSetupRequest(String email) async {
+    return _sendJsonRequest('POST', '/wardens/setup/request/', body: {'email': email});
+  }
+
+  static Future<Map<String, dynamic>> wardenSetupVerifyOtp(String sessionToken, String code) async {
     return _sendJsonRequest(
       'POST',
-      '/auth/password-reset/verify-otp/',
+      '/wardens/setup/verify-otp/',
       body: {'session_token': sessionToken, 'code': code},
     );
   }
 
-  static Future<Map<String, dynamic>> resetPassword(
+  static Future<Map<String, dynamic>> wardenSetupConfirm(
     String sessionToken,
     String code,
     String newPassword,
   ) async {
     return _sendJsonRequest(
       'POST',
-      '/auth/password-reset/confirm/',
+      '/wardens/setup/confirm/',
       body: {
         'session_token': sessionToken,
         'code': code,
@@ -383,5 +383,4 @@ class AuthService {
       },
     );
   }
-
 }

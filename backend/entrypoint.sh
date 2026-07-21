@@ -22,6 +22,9 @@ python manage.py migrate --noinput
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# Start server
-echo "Starting Gunicorn server..."
-exec gunicorn src.config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+if [ "$#" -eq 0 ]; then
+    echo "Starting Gunicorn server..."
+    exec gunicorn src.config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+else
+    exec "$@"
+fi

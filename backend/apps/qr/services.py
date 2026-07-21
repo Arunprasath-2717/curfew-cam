@@ -158,6 +158,15 @@ def validate_qr_token(token):
         if qr_pass.scan_count >= qr_pass.max_scans:
             return False, 'Maximum scans exceeded'
 
+        # Check outpass status
+        if qr_pass.outpass.status in ['cancelled', 'rejected', 'overdue']:
+            return False, f'Outpass is {qr_pass.outpass.status}'
+
+        # Check if the current time is valid for the outpass window
+        now = timezone.now()
+        if now > qr_pass.outpass.expected_return_date:
+            return False, 'Outpass return time has passed'
+
         # Increment scan count
         qr_pass.scan_count += 1
         qr_pass.save()

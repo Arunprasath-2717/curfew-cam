@@ -14,6 +14,7 @@ class WardenProfile(TimeStampedModel):
     designation = models.CharField(max_length=100, default='Warden')
     is_chief_warden = models.BooleanField(default=False)
     is_main_warden = models.BooleanField(default=False)
+    assigned_year = models.PositiveSmallIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.user.full_name} — {self.hostel_name}'
