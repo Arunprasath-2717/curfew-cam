@@ -237,14 +237,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavStudent(
-        currentIndex: 3,
-        onTap: (index) {
-          if (index == 0) Navigator.of(context).popUntil((route) => route.isFirst);
-          if (index == 1) Navigator.pushReplacementNamed(context, '/active-qr');
-          if (index == 2) Navigator.pushReplacementNamed(context, '/history');
-        },
-      ),
     );
   }
 

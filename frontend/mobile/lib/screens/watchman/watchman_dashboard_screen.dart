@@ -4,6 +4,7 @@ import '../../theme/app_text_styles.dart';
 import '../../providers/outpass_provider.dart';
 import '../../providers/watchman_service.dart';
 import '../../widgets/bottom_nav_watchman.dart';
+import '../../widgets/app_drawer.dart';
 
 class WatchmanDashboardScreen extends StatefulWidget {
   const WatchmanDashboardScreen({super.key});
@@ -37,8 +38,9 @@ class _WatchmanDashboardScreenState extends State<WatchmanDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      drawer: const AppDrawer(currentRole: 'watchman'),
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        // automaticallyImplyLeading is true by default, which adds the hamburger menu
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Row(children: [Icon(Icons.security, size: 20), SizedBox(width: 8), Text('GateControl', style: TextStyle(fontWeight: FontWeight.bold))]),
@@ -104,7 +106,6 @@ class _WatchmanDashboardScreenState extends State<WatchmanDashboardScreen> {
         onTap: (index) {
           if (index == 1) Navigator.pushNamed(context, '/qr-scanner');
           if (index == 2) Navigator.pushNamed(context, '/gate-log');
-          if (index == 3) Navigator.pushNamed(context, '/watchman-profile');
         },
       ),
     );

@@ -55,7 +55,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _onNavTap(int index) {
     if (index == 0) Navigator.of(context).popUntil((route) => route.isFirst);
     if (index == 1) Navigator.pushReplacementNamed(context, '/active-qr');
-    if (index == 3) Navigator.pushReplacementNamed(context, '/student-profile');
   }
 
   @override

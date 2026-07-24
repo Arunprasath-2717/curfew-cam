@@ -52,11 +52,6 @@ class BottomNavWarden extends StatelessWidget {
             activeIcon: Icon(Icons.exit_to_app),
             label: 'Outside',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
         ],
       ),
     );

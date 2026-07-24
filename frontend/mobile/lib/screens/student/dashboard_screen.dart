@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bottom_nav_student.dart';
+import '../../widgets/app_drawer.dart';
 import '../../widgets/status_chip.dart';
 import '../../providers/outpass_provider.dart';
 import '../../providers/auth_service.dart';
@@ -156,8 +157,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
       Navigator.pushNamed(context, '/active-qr');
     } else if (index == 2) {
       Navigator.pushNamed(context, '/history');
-    } else if (index == 3) {
-      Navigator.pushNamed(context, '/student-profile');
     }
   }
 
@@ -172,6 +171,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      drawer: const AppDrawer(currentRole: 'student'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : FadeTransition(
@@ -229,7 +229,20 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('CurfewCam', style: AppTextStyles.bodySecondary.copyWith(color: Colors.white54, letterSpacing: 1.2, fontWeight: FontWeight.w600)),
+              Row(
+                children: [
+                  Builder(
+                    builder: (context) => IconButton(
+                      icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 28),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('CurfewCam', style: AppTextStyles.bodySecondary.copyWith(color: Colors.white54, letterSpacing: 1.2, fontWeight: FontWeight.w600)),
+                ],
+              ),
               _buildNotifBell(),
             ],
           ),

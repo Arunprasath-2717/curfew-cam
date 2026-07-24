@@ -53,11 +53,6 @@ class BottomNavWatchman extends StatelessWidget {
             activeIcon: Icon(Icons.history_edu),
             label: 'Logs',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
         ],
       ),
     );

@@ -162,9 +162,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text('Password', style: AppTextStyles.bodySecondary),
                           if (_selectedTabIndex == 1)
                             GestureDetector(
-                              onTap: () => Navigator.pushNamed(context, '/warden-setup'),
+                              onTap: () => Navigator.pushNamed(context, '/warden-signup'),
                               child: Text(
-                                'First time Warden? Setup Account',
+                                'New Warden? Sign Up',
                                 style: AppTextStyles.bodySecondary.copyWith(
                                   color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.w600,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bottom_nav_warden.dart';
+import '../../widgets/app_drawer.dart';
 import '../../providers/warden_service.dart';
 import '../../providers/auth_service.dart';
 import '../../providers/outpass_provider.dart';
@@ -68,13 +69,13 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
   void _onNavTap(int index) {
     if (index == 1) Navigator.pushNamed(context, '/pending-requests');
     if (index == 2) Navigator.pushNamed(context, '/outside-students');
-    if (index == 3) Navigator.pushNamed(context, '/warden-settings');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      drawer: AppDrawer(currentRole: _userRole),
       body: _loading && _stats.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -136,7 +137,20 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('CurfewCam', style: AppTextStyles.bodySecondary.copyWith(color: Colors.white54, letterSpacing: 1.2, fontWeight: FontWeight.w600)),
+              Row(
+                children: [
+                  Builder(
+                    builder: (context) => IconButton(
+                      icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 28),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('CurfewCam', style: AppTextStyles.bodySecondary.copyWith(color: Colors.white54, letterSpacing: 1.2, fontWeight: FontWeight.w600)),
+                ],
+              ),
               Stack(
                 alignment: Alignment.center,
                 children: [

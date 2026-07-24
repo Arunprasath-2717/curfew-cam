@@ -5,48 +5,44 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/primary_button.dart';
 import '../../providers/auth_provider.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class WardenSignupScreen extends StatefulWidget {
+  const WardenSignupScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<WardenSignupScreen> createState() => _WardenSignupScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _WardenSignupScreenState extends State<WardenSignupScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _errorMessage;
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _registerNumberController = TextEditingController();
-  final TextEditingController _blockController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _employeeIdController = TextEditingController();
+  final TextEditingController _hostelNameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _roomNumberController = TextEditingController();
-  
-  String? _selectedDepartment;
-  int? _selectedYear;
-
   final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _registerNumberController.dispose();
-    _blockController.dispose();
     _emailController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _employeeIdController.dispose();
+    _hostelNameController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _phoneController.dispose();
-    _roomNumberController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleRegister() async {
+  Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -58,16 +54,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final res = await authProvider.registerStudent(
-        name: _nameController.text.trim(),
-        registerNumber: _registerNumberController.text.trim(),
-        block: _blockController.text.trim(),
+      final res = await authProvider.registerWarden(
         email: _emailController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        employeeId: _employeeIdController.text.trim(),
+        hostelName: _hostelNameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
         password: _passwordController.text,
-        phone: _phoneController.text.trim(),
-        department: _selectedDepartment ?? '',
-        year: _selectedYear,
-        roomNumber: _roomNumberController.text.trim(),
       );
 
       if (!mounted) return;
@@ -75,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (res['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Account created — please verify your email.'),
+            content: Text('Account setup complete. You can now log in.'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -113,10 +107,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Create Account', style: AppTextStyles.greeting),
+                Text('Warden Sign Up', style: AppTextStyles.greeting),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign up for CurfewCam',
+                  'Set up your warden account',
                   style: AppTextStyles.bodySecondary,
                 ),
                 const SizedBox(height: 32),
@@ -137,19 +131,91 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
 
-                Text('Full Name', style: AppTextStyles.bodySecondary),
+                Text('Authorized Email', style: AppTextStyles.bodySecondary),
                 const SizedBox(height: 8),
                 TextFormField(
-                  controller: _nameController,
+                  controller: _emailController,
                   style: AppTextStyles.bodyMain,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
-                    hintText: 'e.g. John Doe',
-                    prefixIcon: Icon(Icons.person_outline),
+                    hintText: 'e.g. warden@srishakthi.ac.in',
+                    prefixIcon: Icon(Icons.alternate_email),
                   ),
-                  validator: (value) => value == null || value.trim().isEmpty ? 'Name is required' : null,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return 'Email is required';
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Enter a valid email';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 24),
-                
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('First Name', style: AppTextStyles.bodySecondary),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _firstNameController,
+                            style: AppTextStyles.bodyMain,
+                            decoration: const InputDecoration(
+                              hintText: 'e.g. Jane',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                            validator: (value) => value == null || value.trim().isEmpty ? 'First name required' : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Last Name', style: AppTextStyles.bodySecondary),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _lastNameController,
+                            style: AppTextStyles.bodyMain,
+                            decoration: const InputDecoration(
+                              hintText: 'e.g. Doe',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                Text('Employee ID', style: AppTextStyles.bodySecondary),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _employeeIdController,
+                  style: AppTextStyles.bodyMain,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. EMP1234',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  validator: (value) => value == null || value.trim().isEmpty ? 'Employee ID is required' : null,
+                ),
+                const SizedBox(height: 24),
+
+                Text('Hostel Name', style: AppTextStyles.bodySecondary),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _hostelNameController,
+                  style: AppTextStyles.bodyMain,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. A-Block',
+                    prefixIcon: Icon(Icons.apartment_outlined),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
                 Text('Phone Number', style: AppTextStyles.bodySecondary),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -160,120 +226,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: 'e.g. 9876543210',
                     prefixIcon: Icon(Icons.phone_outlined),
                   ),
-                ),
-                const SizedBox(height: 24),
-
-                Text('Register Number (Required for Students)', style: AppTextStyles.bodySecondary),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _registerNumberController,
-                  style: AppTextStyles.bodyMain,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g. 21BS042',
-                    prefixIcon: Icon(Icons.badge_outlined),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Department', style: AppTextStyles.bodySecondary),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            initialValue: _selectedDepartment,
-                            isExpanded: true,
-                            decoration: const InputDecoration(prefixIcon: Icon(Icons.school_outlined)),
-                            items: [
-                              'CSE', 'IT', 'AIML', 'AIDS', 'CYBER', 'EEE', 'ECE', 
-                              'MECH', 'ECE(VLSI)', 'CIVIL', 'BIOMEDICAL', 'BIO TECH', 
-                              'FOOD TECH', 'AGRI'
-                            ].map((dept) => DropdownMenuItem(value: dept, child: Text(dept, style: AppTextStyles.bodyMain, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (v) => setState(() => _selectedDepartment = v),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Year', style: AppTextStyles.bodySecondary),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<int>(
-                            initialValue: _selectedYear,
-                            isExpanded: true,
-                            decoration: const InputDecoration(prefixIcon: Icon(Icons.calendar_today_outlined)),
-                            items: [1, 2, 3, 4].map((y) => DropdownMenuItem(value: y, child: Text('Year $y', style: AppTextStyles.bodyMain, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (v) => setState(() => _selectedYear = v),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Hostel Block', style: AppTextStyles.bodySecondary),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _blockController,
-                            style: AppTextStyles.bodyMain,
-                            decoration: const InputDecoration(
-                              hintText: 'e.g. A-Block',
-                              prefixIcon: Icon(Icons.apartment_outlined),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Room No.', style: AppTextStyles.bodySecondary),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _roomNumberController,
-                            style: AppTextStyles.bodyMain,
-                            decoration: const InputDecoration(
-                              hintText: 'e.g. 204',
-                              prefixIcon: Icon(Icons.door_front_door_outlined),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                Text('College Email', style: AppTextStyles.bodySecondary),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _emailController,
-                  style: AppTextStyles.bodyMain,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g. 21bs042@srishakthi.ac.in',
-                    prefixIcon: Icon(Icons.alternate_email),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Email is required';
-                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Enter a valid email';
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -328,10 +280,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 32),
 
                 PrimaryButton(
-                  label: 'Register',
-                  icon: Icons.person_add_alt_1,
+                  label: 'Complete Setup',
+                  icon: Icons.check_circle_outline,
                   isLoading: _isLoading,
-                  onPressed: _handleRegister,
+                  onPressed: _handleSignup,
                 ),
                 const SizedBox(height: 32),
               ],

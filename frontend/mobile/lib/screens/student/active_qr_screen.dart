@@ -164,7 +164,6 @@ class _ActiveQrScreenState extends State<ActiveQrScreen> {
         onTap: (index) {
           if (index == 0) Navigator.of(context).popUntil((route) => route.isFirst);
           if (index == 2) Navigator.pushReplacementNamed(context, '/history');
-          if (index == 3) Navigator.pushReplacementNamed(context, '/student-profile');
         },
         hasApprovedRequest: true,
       ),

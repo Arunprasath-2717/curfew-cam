@@ -355,32 +355,40 @@ class AuthService {
     );
   }
 
-  static Future<Map<String, dynamic>> wardenSetupRequest(String email) async {
-    return _sendJsonRequest('POST', '/wardens/setup/request/', body: {'email': email});
-  }
-
-  static Future<Map<String, dynamic>> wardenSetupVerifyOtp(String sessionToken, String code) async {
-    return _sendJsonRequest(
+  static Future<Map<String, dynamic>> wardenSignup({
+    required String email,
+    required String firstName,
+    required String password,
+    required String employeeId,
+    String lastName = '',
+    String hostelName = '',
+    String phoneNumber = '',
+  }) async {
+    final response = await _sendJsonRequest(
       'POST',
-      '/wardens/setup/verify-otp/',
-      body: {'session_token': sessionToken, 'code': code},
-    );
-  }
-
-  static Future<Map<String, dynamic>> wardenSetupConfirm(
-    String sessionToken,
-    String code,
-    String newPassword,
-  ) async {
-    return _sendJsonRequest(
-      'POST',
-      '/wardens/setup/confirm/',
+      '/wardens/setup/signup/',
       body: {
-        'session_token': sessionToken,
-        'code': code,
-        'new_password': newPassword,
-        'new_password2': newPassword,
+        'email': email,
+        'first_name': firstName,
+        'last_name': lastName,
+        'password': password,
+        'employee_id': employeeId,
+        'hostel_name': hostelName,
+        'phone_number': phoneNumber,
       },
     );
+
+    if (response['success'] == true) {
+      return {
+        'success': true,
+        'message': response['message']?.toString() ?? 'Registration successful',
+      };
+    }
+
+    return {
+      'success': false,
+      'message': response['message']?.toString() ?? 'Registration failed',
+      'statusCode': response['statusCode'],
+    };
   }
 }

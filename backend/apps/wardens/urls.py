@@ -23,7 +23,5 @@ urlpatterns = [
     path('manage/audit-log/', management_views.AuditLogListView.as_view(), name='manage-audit-log'),
 
     # Warden Setup (Onboarding)
-    path('setup/request/', management_views.WardenSetupRequestView.as_view(), name='setup-request'),
-    path('setup/verify-otp/', management_views.WardenSetupVerifyOTPView.as_view(), name='setup-verify-otp'),
-    path('setup/confirm/', management_views.WardenSetupConfirmView.as_view(), name='setup-confirm'),
+    path('setup/signup/', management_views.WardenSignupView.as_view(), name='setup-signup'),
 ]

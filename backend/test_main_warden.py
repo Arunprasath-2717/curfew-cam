@@ -45,11 +45,7 @@ def run_test():
     # 1. Reg warden tries to create a warden (should fail 403)
     client.force_authenticate(user=reg_user)
     res1 = client.post('/api/v1/wardens/manage/wardens/', {
-        'first_name': 'Target',
         'email': 'targetwarden@srishakthi.ac.in',
-        'password': 'password123',
-        'employee_id': 'TW1',
-        'hostel_name': 'H1'
     })
     print(f"Reg warden create status: {res1.status_code}")
     assert res1.status_code == 403
@@ -58,15 +54,11 @@ def run_test():
     main_user = User.objects.get(email='mainwarden@srishakthi.ac.in')
     client.force_authenticate(user=main_user)
     res2 = client.post('/api/v1/wardens/manage/wardens/', {
-        'first_name': 'Target',
         'email': 'targetwarden@srishakthi.ac.in',
-        'password': 'password123',
-        'employee_id': 'TW1',
-        'hostel_name': 'H1'
     })
     print(f"Main warden create status: {res2.status_code}")
     assert res2.status_code == 200
-    target_warden = WardenProfile.objects.get(employee_id='TW1')
+    target_warden = User.objects.get(email='targetwarden@srishakthi.ac.in').warden_profile
 
     # 3. Reg warden tries to delete warden (should fail 403)
     client.force_authenticate(user=reg_user)

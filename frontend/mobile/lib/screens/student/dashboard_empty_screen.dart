@@ -23,9 +23,6 @@ class _DashboardEmptyScreenState extends State<DashboardEmptyScreen> {
     } else if (index == 2) {
       Navigator.pushNamed(context, '/history');
       setState(() => _currentIndex = 0);
-    } else if (index == 3) {
-      Navigator.pushNamed(context, '/student-profile');
-      setState(() => _currentIndex = 0);
     }
   }
 

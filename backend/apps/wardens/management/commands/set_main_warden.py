@@ -17,6 +17,8 @@ class Command(BaseCommand):
                 return
 
             try:
+                user.role = 'admin_warden'
+                user.save()
                 profile = user.warden_profile
                 profile.is_main_warden = True
                 profile.save()

@@ -89,20 +89,16 @@ class ManageWardensView(APIView):
             
         user = User.objects.create_user(
             email=email,
-            password=data.get('password'),
-            first_name=data['first_name'],
-            last_name=data.get('last_name', ''),
+            password=None,
+            first_name='',
+            last_name='',
             role=UserRole.WARDEN,
             is_verified=True
         )
-        if not data.get('password'):
-            user.set_unusable_password()
-            user.save()
+        user.set_unusable_password()
+        user.save()
         
         profile = user.warden_profile
-        profile.employee_id = data['employee_id']
-        profile.hostel_name = data.get('hostel_name', '')
-        profile.assigned_year = data.get('assigned_year')
         profile.is_chief_warden = data.get('is_chief_warden', False)
         profile.save()
         
@@ -112,12 +108,7 @@ class ManageWardensView(APIView):
             target_email=email
         )
         
-        if not data.get('password'):
-            from apps.accounts.services import request_password_reset
-            request_password_reset(email)
-            return success_response(message='Warden account created successfully. An email invite has been sent.')
-        
-        return success_response(message='Warden account created successfully.')
+        return success_response(message='Warden authorized successfully. They can now sign up.')
 
 class ManageWardenDetailView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminWarden)
@@ -182,66 +173,36 @@ class RunPromotionView(APIView):
             message='Promotion cycle completed successfully.'
         )
 
-class WardenSetupRequestView(APIView):
-    """Request OTP for Warden Setup."""
+class WardenSignupView(APIView):
+    """Sign up for an authorized Warden."""
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        from apps.wardens.serializers import WardenSetupRequestSerializer
-        from apps.accounts.services import request_password_reset
+        from apps.wardens.serializers import WardenSignupSerializer
 
-        serializer = WardenSetupRequestSerializer(data=request.data)
+        serializer = WardenSignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
+        data = serializer.validated_data
+        email = data['email']
         
         try:
             user = User.objects.get(email__iexact=email)
-            if user.role not in [UserRole.WARDEN, UserRole.ADMIN_WARDEN] or user.has_usable_password():
-                return error_response('Invalid request.', status_code=400)
+            if user.role not in [UserRole.WARDEN, UserRole.ADMIN_WARDEN]:
+                return error_response('This email has not been authorized by an administrator. Contact your Admin Warden.', status_code=400)
+            if user.has_usable_password():
+                return error_response('Account already set up. Please log in.', status_code=400)
         except User.DoesNotExist:
-            return error_response('Invalid request.', status_code=400)
+            return error_response('This email has not been authorized by an administrator. Contact your Admin Warden.', status_code=400)
             
-        session_token = request_password_reset(email)
-        return success_response(
-            message='OTP sent to your email.',
-            data={'reset_session': session_token}
-        )
+        user.first_name = data['first_name']
+        user.last_name = data.get('last_name', '')
+        user.phone_number = data.get('phone_number', '')
+        user.set_password(data['password'])
+        user.save()
 
-class WardenSetupVerifyOTPView(APIView):
-    """Verify OTP for Warden Setup."""
-    permission_classes = (permissions.AllowAny,)
+        profile = user.warden_profile
+        profile.employee_id = data['employee_id']
+        profile.hostel_name = data.get('hostel_name', '')
+        profile.save()
 
-    def post(self, request):
-        from apps.wardens.serializers import WardenSetupVerifyOTPSerializer
-        from apps.accounts.services import check_password_reset_otp
-
-        serializer = WardenSetupVerifyOTPSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        session_token = serializer.validated_data['session_token']
-        code = serializer.validated_data['code']
-        
-        success, msg = check_password_reset_otp(session_token, code)
-        if not success:
-            return error_response(msg, status_code=400)
-        return success_response(message=msg)
-
-class WardenSetupConfirmView(APIView):
-    """Set new password for Warden Setup."""
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        from apps.wardens.serializers import WardenSetupConfirmSerializer
-        from apps.accounts.services import confirm_password_reset
-
-        serializer = WardenSetupConfirmSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        session_token = serializer.validated_data['session_token']
-        code = serializer.validated_data['code']
-        new_password = serializer.validated_data['new_password']
-
-        success, msg = confirm_password_reset(session_token, code, new_password)
-        if not success:
-            return error_response(msg, status_code=400)
         return success_response(message='Account setup complete. You can now login.')

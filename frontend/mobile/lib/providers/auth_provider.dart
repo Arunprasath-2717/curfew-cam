@@ -92,6 +92,27 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
+  /// Register warden.
+  Future<Map<String, dynamic>> registerWarden({
+    required String email,
+    required String firstName,
+    required String password,
+    required String employeeId,
+    String lastName = '',
+    String hostelName = '',
+    String phoneNumber = '',
+  }) async {
+    return await AuthService.wardenSignup(
+      email: email,
+      firstName: firstName,
+      password: password,
+      employeeId: employeeId,
+      lastName: lastName,
+      hostelName: hostelName,
+      phoneNumber: phoneNumber,
+    );
+  }
+
   /// Logout — clear tokens and reset state.
   Future<void> logout() async {
     await AuthService.logout();
