@@ -5,7 +5,7 @@ import '../screens/auth/onboarding_one_screen.dart';
 import '../screens/auth/onboarding_two_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
-import '../screens/warden/warden_signup_screen.dart';
+
 
 import '../screens/student/dashboard_screen.dart';
 import '../screens/student/request_step_1_screen.dart';
@@ -73,7 +73,7 @@ class AppRouter {
   
   static const String login = '/login';
   static const String register = '/register';
-  static const String wardenSignup = '/warden-signup';
+
   
   static const String studentDashboard = '/student-dashboard';
   static const String requestStep1 = '/request-step1';
@@ -140,7 +140,7 @@ class AppRouter {
         onboarding2: (context) => const OnboardingTwoScreen(),
         login: (context) => const LoginScreen(),
         register: (context) => const RegisterScreen(),
-        wardenSignup: (context) => const WardenSignupScreen(),
+
         studentDashboard: (context) => const StudentDashboardScreen(),
         requestStep1: (context) => const RequestStep1Screen(),
         requestStep2: (context) {

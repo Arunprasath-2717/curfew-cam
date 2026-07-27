@@ -5,6 +5,7 @@ from .models import UserRole
 
 class IsStudent(BasePermission):
     def has_permission(self, request, view):
+        print(f"[DEBUG] IsStudent check. User: {request.user.email}, Role: {getattr(request.user, 'role', 'NoRole')}, Auth: {request.user.is_authenticated}")
         return request.user.is_authenticated and request.user.role == UserRole.STUDENT
 
 

@@ -88,3 +88,42 @@ def broadcast_notification(notification_id, event_name):
             
     except Exception as e:
         logger.exception(f"Failed to broadcast real-time notification {notification_id}: {e}")
+
+@shared_task
+def send_fcm_notification_async(notification_id):
+    """Send push notification via Firebase Cloud Messaging."""
+    from .models import Notification
+    import firebase_admin
+    from firebase_admin import messaging
+    
+    if not firebase_admin._apps:
+        logger.warning("Firebase Admin not initialized, skipping FCM dispatch.")
+        return
+
+    try:
+        notification = Notification.objects.get(id=notification_id)
+        token = notification.user.fcm_token
+        
+        if not token:
+            logger.info(f"User {notification.user.id} has no FCM token. Skipping push notification.")
+            return
+
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=notification.title,
+                body=notification.message,
+            ),
+            data={
+                "event_id": str(notification.id),
+                "category": notification.category,
+            },
+            token=token,
+        )
+        
+        response = messaging.send(message)
+        logger.info(f"Successfully sent FCM message: {response}")
+        
+    except Notification.DoesNotExist:
+        logger.error(f"Notification {notification_id} not found")
+    except Exception as e:
+        logger.error(f"Failed to send FCM notification for {notification_id}: {e}")

@@ -89,16 +89,18 @@ class ManageWardensView(APIView):
             
         user = User.objects.create_user(
             email=email,
-            password=None,
-            first_name='',
-            last_name='',
+            password=data['password'],
+            first_name=data['first_name'],
+            last_name=data.get('last_name', ''),
+            phone_number=data.get('phone_number', ''),
             role=UserRole.WARDEN,
             is_verified=True
         )
-        user.set_unusable_password()
-        user.save()
         
         profile = user.warden_profile
+        profile.employee_id = data['employee_id']
+        profile.hostel_name = data.get('hostel_name', '')
+        profile.assigned_year = data.get('assigned_year')
         profile.is_chief_warden = data.get('is_chief_warden', False)
         profile.save()
         
@@ -108,7 +110,7 @@ class ManageWardensView(APIView):
             target_email=email
         )
         
-        return success_response(message='Warden authorized successfully. They can now sign up.')
+        return success_response(message='Warden account created successfully.')
 
 class ManageWardenDetailView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminWarden)
@@ -138,6 +140,14 @@ class ManageWardenDetailView(APIView):
             
         if request.user.id == warden.user.id:
             return error_response('Cannot delete your own account.')
+            
+        from apps.outpass.models import Outpass
+        pending_count = Outpass.objects.filter(
+            status=Outpass.Status.PENDING,
+            student__hostel_block=warden.hostel_name
+        ).count()
+        if pending_count > 0:
+            return error_response(f'Cannot delete warden: they have {pending_count} pending request(s) assigned to their hostel ({warden.hostel_name}).')
             
         email = warden.user.email
         warden.user.is_active = False
@@ -173,36 +183,4 @@ class RunPromotionView(APIView):
             message='Promotion cycle completed successfully.'
         )
 
-class WardenSignupView(APIView):
-    """Sign up for an authorized Warden."""
-    permission_classes = (permissions.AllowAny,)
 
-    def post(self, request):
-        from apps.wardens.serializers import WardenSignupSerializer
-
-        serializer = WardenSignupSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        email = data['email']
-        
-        try:
-            user = User.objects.get(email__iexact=email)
-            if user.role not in [UserRole.WARDEN, UserRole.ADMIN_WARDEN]:
-                return error_response('This email has not been authorized by an administrator. Contact your Admin Warden.', status_code=400)
-            if user.has_usable_password():
-                return error_response('Account already set up. Please log in.', status_code=400)
-        except User.DoesNotExist:
-            return error_response('This email has not been authorized by an administrator. Contact your Admin Warden.', status_code=400)
-            
-        user.first_name = data['first_name']
-        user.last_name = data.get('last_name', '')
-        user.phone_number = data.get('phone_number', '')
-        user.set_password(data['password'])
-        user.save()
-
-        profile = user.warden_profile
-        profile.employee_id = data['employee_id']
-        profile.hostel_name = data.get('hostel_name', '')
-        profile.save()
-
-        return success_response(message='Account setup complete. You can now login.')

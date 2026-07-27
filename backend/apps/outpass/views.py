@@ -45,6 +45,7 @@ class OutpassRequestView(APIView):
                 is_active=True,
                 warden_profile__hostel_name=outpass.student.hostel_block,
             )
+
             if not wardens.exists():
                 # Hostel block string didn't match any warden's hostel_name exactly;
                 # fall back to ALL active wardens so the request is never missed.
@@ -204,9 +205,10 @@ class BulkApproveView(APIView):
                     if outpass.status != Outpass.Status.PENDING:
                         failed.append({'id': str(oid), 'reason': 'Not pending'})
                         continue
-                    if warden_profile and outpass.student.hostel_block != warden_profile.hostel_name and request.user.role != UserRole.ADMIN_WARDEN:
-                        failed.append({'id': str(oid), 'reason': 'Wrong hostel block'})
-                        continue
+                    if warden_profile and request.user.role != UserRole.ADMIN_WARDEN:
+                        if outpass.student.hostel_block != warden_profile.hostel_name:
+                            failed.append({'id': str(oid), 'reason': 'Wrong hostel block'})
+                            continue
                     outpass.status = Outpass.Status.APPROVED
                     outpass.approved_by = warden_profile
                     outpass.save()

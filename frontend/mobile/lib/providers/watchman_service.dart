@@ -4,10 +4,10 @@ class WatchmanService {
   static Future<Map<String, dynamic>> getDashboard() =>
       ApiClient.request('GET', '/watchmen/dashboard/');
 
-  static Future<Map<String, dynamic>> scanQr(String qrToken, String scanType, {String? gate}) =>
+  static Future<Map<String, dynamic>> scanQr(String qrToken, [String? scanType, String? gate]) =>
       ApiClient.request('POST', '/watchmen/scan/', body: {
         'qr_token': qrToken,
-        'scan_type': scanType,
+        if (scanType != null && scanType.isNotEmpty) 'scan_type': scanType,
         if (gate != null) 'gate': gate,
       });
 

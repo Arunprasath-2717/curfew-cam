@@ -42,7 +42,7 @@ class _NotificationsWardenScreenState extends State<NotificationsWardenScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text('CurfewCam', style: TextStyle(fontWeight: FontWeight.w600)),
-        leading: IconButton(icon: Icon(Icons.menu), onPressed: () {}),
+        leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
         actions: [
           Stack(
             alignment: Alignment.center,

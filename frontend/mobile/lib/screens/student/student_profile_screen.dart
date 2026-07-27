@@ -42,6 +42,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             'register_number': _user!['rollNo'] ?? 'N/A',
             'room_number': _user!['room'] ?? 'N/A',
             'department': _user!['department'] ?? 'N/A',
+            'year': _user!['year'] ?? 'N/A',
             'outpass_stats': _user!['outpass_stats'] ?? {'total': 0, 'approved': 0, 'rejected': 0},
           };
           _avatarUrl = _user!['avatar'] as String?;
@@ -101,15 +102,23 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.fingerprint, size: 18, color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)),
+                        Icon(Icons.school, size: 18, color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)),
                         const SizedBox(width: 4),
-                        Text('Roll No: ${_user!['student_profile']?['register_number'] ?? 'N/A'}', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
+                        Text('Dept: ${_user!['student_profile']?['department'] ?? 'N/A'}', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
+                        const SizedBox(width: 16),
+                        Icon(Icons.calendar_today, size: 18, color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)),
+                        const SizedBox(width: 4),
+                        Text('Year: ${_user!['student_profile']?['year'] ?? 'N/A'}', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Icon(Icons.fingerprint, size: 18, color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)),
+                        const SizedBox(width: 4),
+                        Text('Roll No: ${_user!['student_profile']?['register_number'] ?? 'N/A'}', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
+                        const SizedBox(width: 16),
                         Icon(Icons.meeting_room, size: 18, color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)),
                         const SizedBox(width: 4),
                         Text('Room: ${_user!['student_profile']?['room_number'] ?? 'N/A'}', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
@@ -137,49 +146,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   Expanded(child: _buildStatBox(context, 'Rejected', '${_user!['student_profile']?['outpass_stats']?['rejected'] ?? 0}', Theme.of(context).colorScheme.error)),
                 ],
               ),
-              const SizedBox(height: 24),
-              
-              // Info
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        border: Border.all(color: Theme.of(context).dividerColor),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).scaffoldBackgroundColor,
-                              border: Border.all(color: Theme.of(context).dividerColor),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(Icons.school, color: Theme.of(context).primaryColor),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('DEPARTMENT', style: AppTextStyles.badgeCaps.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
-                                const SizedBox(height: 4),
-                                Text('${_user!['student_profile']?['department'] ?? 'N/A'}', style: AppTextStyles.cardTitle),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
 
-              
               // Settings
               Container(
                 decoration: BoxDecoration(

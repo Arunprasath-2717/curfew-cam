@@ -144,35 +144,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
 
                       // 3. Form Fields
-                      Text('College Email', style: AppTextStyles.bodySecondary),
+                      Text(_selectedTabIndex == 2 ? 'Phone Number' : 'College Email', style: AppTextStyles.bodySecondary),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _emailController,
+                        keyboardType: _selectedTabIndex == 2 ? TextInputType.phone : TextInputType.emailAddress,
                         style: AppTextStyles.bodyMain,
-                        decoration: const InputDecoration(
-                          hintText: 'e.g. 21bs042@univ.edu',
-                          prefixIcon: Icon(Icons.alternate_email),
+                        decoration: InputDecoration(
+                          hintText: _selectedTabIndex == 2 ? 'e.g. 9998887770' : 'e.g. 21bs042@univ.edu',
+                          prefixIcon: Icon(_selectedTabIndex == 2 ? Icons.phone : Icons.alternate_email),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Password', style: AppTextStyles.bodySecondary),
-                          if (_selectedTabIndex == 1)
-                            GestureDetector(
-                              onTap: () => Navigator.pushNamed(context, '/warden-signup'),
-                              child: Text(
-                                'New Warden? Sign Up',
-                                style: AppTextStyles.bodySecondary.copyWith(
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                      Text('Password', style: AppTextStyles.bodySecondary),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _passwordController,

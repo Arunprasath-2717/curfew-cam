@@ -20,27 +20,36 @@ class OutpassSerializer(serializers.ModelSerializer):
     student_on_campus = serializers.BooleanField(source='student.is_on_campus', read_only=True)
     is_late = serializers.BooleanField(read_only=True)
     approved_by_name = serializers.SerializerMethodField()
+    student_phone = serializers.CharField(source='student.user.phone_number', read_only=True)
+    guardian_phone = serializers.SerializerMethodField()
 
     class Meta:
         model = Outpass
         fields = (
             'id', 'student', 'student_name', 'student_register', 'student_on_campus',
+            'student_phone', 'guardian_phone',
             'outpass_type', 'reason', 'destination',
             'exit_date', 'exit_time',
             'expected_return_date', 'expected_return_time',
             'actual_exit_time', 'actual_return_time',
             'status', 'rejection_reason', 'warden_notes',
-            'approved_by', 'approved_by_name',
+            'approved_by', 'approved_by_name', 'reviewed_at',
             'is_late', 'created_at',
         )
         read_only_fields = (
             'id', 'student', 'actual_exit_time', 'actual_return_time',
-            'status', 'rejection_reason', 'approved_by', 'created_at',
+            'status', 'rejection_reason', 'approved_by', 'reviewed_at', 'created_at',
         )
 
     def get_approved_by_name(self, obj):
         if obj.approved_by:
             return obj.approved_by.user.full_name
+        return None
+
+    def get_guardian_phone(self, obj):
+        guardian = obj.student.guardians.filter(is_primary=True).first()
+        if guardian:
+            return guardian.phone
         return None
 
 

@@ -160,6 +160,8 @@ class _AddWardenFormState extends State<_AddWardenForm> {
   String _email = '';
   String _empId = '';
   String _hostelName = '';
+  String _assignedYear = '1';
+  String _password = '';
   bool _loading = false;
 
   void _submit() async {
@@ -174,7 +176,15 @@ class _AddWardenFormState extends State<_AddWardenForm> {
       'email': _email,
       'employee_id': _empId,
       'hostel_name': _hostelName,
+      'password': _password,
     };
+
+    if (_assignedYear.isNotEmpty) {
+      final year = int.tryParse(_assignedYear);
+      if (year != null) {
+        data['assigned_year'] = year;
+      }
+    }
     
     final res = await WardenService.createWarden(data);
         
@@ -184,7 +194,28 @@ class _AddWardenFormState extends State<_AddWardenForm> {
       if (!mounted) return;
       Navigator.pop(context);
       widget.onAdded();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Warden invited successfully. An email has been sent.')));
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Warden Created'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Warden account created successfully.'),
+              const SizedBox(height: 16),
+              Text('Email: $_email', style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      );
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Error')));
@@ -211,9 +242,9 @@ class _AddWardenFormState extends State<_AddWardenForm> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Invite Warden', style: AppTextStyles.screenTitle),
+                  Text('Create Warden', style: AppTextStyles.screenTitle),
                   const SizedBox(height: 8),
-                  Text('An email invite will be sent to them to set their password.', style: AppTextStyles.bodySecondary),
+                  Text('A password will be generated for the new warden. Tell them to login with it.', style: AppTextStyles.bodySecondary),
                   const SizedBox(height: 24),
                   Row(
                     children: [
@@ -232,10 +263,26 @@ class _AddWardenFormState extends State<_AddWardenForm> {
                       Expanded(child: _buildField('Hostel Name (Optional)', (v) => _hostelName = v!, required: false)),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  _buildField('Password', (v) => _password = v!, isPassword: true),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _assignedYear,
+                    decoration: InputDecoration(
+                      labelText: 'Assigned Year',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    items: ['1', '2', '3', '4']
+                        .map((y) => DropdownMenuItem(value: y, child: Text('Year $y')))
+                        .toList(),
+                    onChanged: (v) => setState(() => _assignedYear = v!),
+                    onSaved: (v) => _assignedYear = v ?? '1',
+                  ),
                   
                   const SizedBox(height: 32),
                   PrimaryButton(
-                    label: 'Send Invite',
+                    label: 'Create Warden',
                     onPressed: _submit,
                     isLoading: _loading,
                   ),
@@ -248,14 +295,20 @@ class _AddWardenFormState extends State<_AddWardenForm> {
     );
   }
 
-  Widget _buildField(String label, void Function(String?) onSave, {bool required = true}) {
+  Widget _buildField(String label, void Function(String?) onSave, {bool required = true, bool isNumber = false, bool isPassword = false}) {
     return TextFormField(
+      keyboardType: isNumber ? TextInputType.number : (label.contains('Email') ? TextInputType.emailAddress : TextInputType.text),
+      obscureText: isPassword,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
-      validator: required ? (v) => v == null || v.isEmpty ? 'Required' : null : null,
+      validator: required ? (v) {
+        if (v == null || v.isEmpty) return 'Required';
+        if (label.contains('Email') && !v.contains('@')) return 'Enter a valid email';
+        return null;
+      } : null,
       onSaved: onSave,
     );
   }

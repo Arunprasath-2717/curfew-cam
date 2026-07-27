@@ -78,6 +78,41 @@ class ShiftEndView(APIView):
         return success_response(message='Shift ended')
 
 
+def _notify_wardens_for_scan(outpass, scan_type):
+    from apps.wardens.models import WardenProfile
+    from apps.notifications.services import NotificationService
+    from apps.notifications.models import Notification
+    from django.db.models import Q
+    
+    student = outpass.student
+    wardens = WardenProfile.objects.filter(
+        Q(is_chief_warden=True) |
+        (Q(hostel_name=student.hostel_block) &
+         (Q(assigned_year__isnull=True) | Q(assigned_year=student.year)))
+    )
+    
+    if scan_type == 'EXIT':
+        title = f'Student Exited: {student.user.full_name}'
+        message = f'{student.user.full_name} ({student.register_number}) has departed the campus.'
+        event_name = 'OUTPASS_EXITED_WARDEN'
+    else:
+        title = f'Student Returned: {student.user.full_name}'
+        message = f'{student.user.full_name} ({student.register_number}) has returned to campus.'
+        event_name = 'OUTPASS_RETURNED_WARDEN'
+        
+    for warden in wardens:
+        NotificationService.create(
+            user=warden.user,
+            title=title,
+            message=message,
+            event_name=event_name,
+            category=Notification.NotificationCategory.OUTPASS,
+            notification_type=Notification.NotificationType.OUTPASS_STATUS,
+            priority=Notification.NotificationPriority.NORMAL,
+            related_outpass=outpass,
+        )
+
+
 class QRScanView(APIView):
     """Scan QR code at gate (exit or return)."""
     permission_classes = (permissions.IsAuthenticated, IsWatchman)
@@ -87,7 +122,7 @@ class QRScanView(APIView):
         serializer.is_valid(raise_exception=True)
 
         token = serializer.validated_data['qr_token']
-        scan_type = serializer.validated_data['scan_type']
+        scan_type = serializer.validated_data.get('scan_type')
         gate = serializer.validated_data.get('gate', '')
         profile = request.user.watchman_profile
 
@@ -99,6 +134,15 @@ class QRScanView(APIView):
         qr_pass = result  # On success, result is the QRPass object
         outpass = qr_pass.outpass
 
+        # Auto-detect scan_type based on outpass status if not provided
+        if not scan_type:
+            if outpass.status == Outpass.Status.APPROVED:
+                scan_type = 'EXIT'
+            elif outpass.status == Outpass.Status.ACTIVE:
+                scan_type = 'RETURN'
+            else:
+                return error_response(f'Outpass is currently {outpass.get_status_display()} and cannot be scanned for exit/return.')
+
         # Business logic
         if scan_type == 'EXIT':
             if outpass.status != Outpass.Status.APPROVED:
@@ -108,8 +152,6 @@ class QRScanView(APIView):
             outpass.save()
             outpass.student.is_in_hostel = False
             outpass.student.save()
-            qr_pass.is_used = True
-            qr_pass.save()
         elif scan_type == 'RETURN':
             if outpass.status != Outpass.Status.ACTIVE:
                 return error_response('Outpass is not active for return')
@@ -137,6 +179,36 @@ class QRScanView(APIView):
             gate=gate or profile.assigned_gate,
             recorded_by=request.user,
         )
+        
+        # Notify Wardens
+        _notify_wardens_for_scan(outpass, scan_type)
+
+        # Notify Student
+        try:
+            from apps.notifications.services import NotificationService
+            from apps.notifications.models import Notification
+            if scan_type == 'EXIT':
+                NotificationService.create(
+                    user=outpass.student.user,
+                    title='Exit Recorded',
+                    message=f'Your exit has been recorded at {gate or profile.assigned_gate}. Have a safe trip!',
+                    event_name='OUTPASS_EXIT_STUDENT',
+                    category=Notification.NotificationCategory.OUTPASS,
+                    notification_type=Notification.NotificationType.OUTPASS_STATUS,
+                    related_outpass=outpass,
+                )
+            else:
+                NotificationService.create(
+                    user=outpass.student.user,
+                    title='Return Recorded',
+                    message=f'Your return has been recorded at {gate or profile.assigned_gate}. Welcome back!',
+                    event_name='OUTPASS_RETURN_STUDENT',
+                    category=Notification.NotificationCategory.OUTPASS,
+                    notification_type=Notification.NotificationType.OUTPASS_STATUS,
+                    related_outpass=outpass,
+                )
+        except Exception:
+            pass  # Never let notification failure break scan recording
 
         return success_response(
             data=GateScanSerializer(scan).data,
@@ -184,8 +256,6 @@ def _apply_scan(outpass, qr_pass, scan_type, profile, gate, user):
         outpass.save()
         outpass.student.is_in_hostel = False
         outpass.student.save()
-        qr_pass.is_used = True
-        qr_pass.save()
     elif scan_type == 'RETURN':
         if outpass.status != Outpass.Status.ACTIVE:
             return False, 'Outpass is not active for return'
@@ -210,6 +280,36 @@ def _apply_scan(outpass, qr_pass, scan_type, profile, gate, user):
         gate=gate or profile.assigned_gate,
         recorded_by=user,
     )
+    
+    _notify_wardens_for_scan(outpass, scan_type)
+
+    # Notify student
+    try:
+        from apps.notifications.services import NotificationService
+        from apps.notifications.models import Notification
+        if scan_type == 'EXIT':
+            NotificationService.create(
+                user=outpass.student.user,
+                title='Exit Recorded',
+                message=f'Your exit has been recorded at {gate or profile.assigned_gate}. Have a safe trip!',
+                event_name='OUTPASS_EXIT_STUDENT',
+                category=Notification.NotificationCategory.OUTPASS,
+                notification_type=Notification.NotificationType.OUTPASS_STATUS,
+                related_outpass=outpass,
+            )
+        else:
+            NotificationService.create(
+                user=outpass.student.user,
+                title='Return Recorded',
+                message=f'Your return has been recorded at {gate or profile.assigned_gate}. Welcome back!',
+                event_name='OUTPASS_RETURN_STUDENT',
+                category=Notification.NotificationCategory.OUTPASS,
+                notification_type=Notification.NotificationType.OUTPASS_STATUS,
+                related_outpass=outpass,
+            )
+    except Exception:
+        pass
+
     return True, scan
 
 

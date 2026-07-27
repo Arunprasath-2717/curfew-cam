@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/status_chip.dart';
@@ -34,6 +35,13 @@ class _RequestDetailApprovalScreenState extends State<RequestDetailApprovalScree
     }
   }
 
+  String _formatDateTime(String? raw) {
+    if (raw == null || raw.isEmpty) return 'N/A';
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    return DateFormat('MMM dd, yyyy • h:mm a').format(dt.toLocal());
+  }
+
   @override
   Widget build(BuildContext context) {
     final id = ModalRoute.of(context)?.settings.arguments as String?;
@@ -55,6 +63,8 @@ class _RequestDetailApprovalScreenState extends State<RequestDetailApprovalScree
                           _buildDetailCard(),
                           const SizedBox(height: 16),
                           _buildTimingCard(),
+                          const SizedBox(height: 16),
+                          _buildLifecycleCard(),
                           const SizedBox(height: 28),
                           _buildActions(id),
                         ]),
@@ -157,6 +167,50 @@ class _RequestDetailApprovalScreenState extends State<RequestDetailApprovalScree
               Expanded(child: _timingBlock(Icons.login_rounded, 'Return', '${_outpass!['expected_return_date'] ?? ''}', '${_outpass!['expected_return_time'] ?? ''}', AppColors.success)),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLifecycleCard() {
+    final status = (_outpass!['status'] ?? 'PENDING').toString().toUpperCase();
+    final requestedAt = _formatDateTime(_outpass!['created_at']);
+    final reviewedAt = _formatDateTime(_outpass!['reviewed_at']);
+    final wardenName = _outpass!['approved_by_name'];
+    final actualExit = _formatDateTime(_outpass!['actual_exit_time']);
+    final actualReturn = _formatDateTime(_outpass!['actual_return_time']);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('TIMESTAMPS & LIFECYCLE', style: AppTextStyles.badgeCaps.copyWith(color: AppColors.textSecondary, letterSpacing: 1.2)),
+          const SizedBox(height: 16),
+          _detailRow(Icons.send_rounded, 'Requested On', requestedAt, AppColors.accentBlue),
+          if (status != 'PENDING' && reviewedAt != 'N/A') ...[
+            const SizedBox(height: 14),
+            _detailRow(
+              status == 'APPROVED' ? Icons.verified_user_rounded : Icons.gavel_rounded,
+              status == 'APPROVED' ? 'Approved On' : 'Reviewed On',
+              wardenName != null ? '$reviewedAt by $wardenName' : reviewedAt,
+              status == 'APPROVED' ? AppColors.success : AppColors.error,
+            ),
+          ],
+          if (actualExit != 'N/A') ...[
+            const SizedBox(height: 14),
+            _detailRow(Icons.sensor_door_outlined, 'Gate Exit Recorded', actualExit, AppColors.accentIndigo),
+          ],
+          if (actualReturn != 'N/A') ...[
+            const SizedBox(height: 14),
+            _detailRow(Icons.sensor_door_rounded, 'Gate Return Recorded', actualReturn, AppColors.success),
+          ],
         ],
       ),
     );

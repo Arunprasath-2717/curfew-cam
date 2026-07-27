@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'api_client.dart';
+import '../services/push_notification_service.dart';
 
 enum AuthStatus { initial, authenticated, unauthenticated }
 
@@ -39,6 +40,9 @@ class AuthProvider extends ChangeNotifier {
           : null;
       _userRole = _userData?['role'] as String?;
       _status = AuthStatus.authenticated;
+      
+      // Register FCM token for the existing session
+      PushNotificationService().registerDeviceToken();
     } else {
       // Token is invalid and refresh also failed (ApiClient handles that).
       await AuthService.clearTokens();
@@ -62,6 +66,10 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _status = AuthStatus.authenticated;
+      
+      // Register FCM token for new login
+      PushNotificationService().registerDeviceToken();
+      
       notifyListeners();
     }
     return res;

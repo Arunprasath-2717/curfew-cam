@@ -88,7 +88,7 @@ class OutpassProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<Map<String, dynamic>> validateAndConsumeToken(String qrPayload, String scanType) async {
+  Future<Map<String, dynamic>> validateAndConsumeToken(String qrPayload, [String? scanType]) async {
     String token = qrPayload;
     try {
       final parsed = jsonDecode(qrPayload);
@@ -101,8 +101,9 @@ class OutpassProvider extends ChangeNotifier {
     if (res['success'] == true) {
       await refreshGateLogs();
       final data = res['data'] as Map<String, dynamic>? ?? {};
+      final actualScanType = data['scan_type']?.toString() ?? scanType ?? 'EXIT';
       return {
-        'status': scanType == 'EXIT' ? 'EXIT_SUCCESS' : 'RETURN_SUCCESS',
+        'status': actualScanType == 'EXIT' ? 'EXIT_SUCCESS' : 'RETURN_SUCCESS',
         'outpassId': data['outpass']?.toString() ?? '',
         'studentName': data['student_name'] ?? 'Student',
       };

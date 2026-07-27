@@ -28,7 +28,7 @@ services:
       - DJANGO_SETTINGS_MODULE=src.config.settings.production
       - SECRET_KEY=your-super-secret-production-key
       - SSL_REDIRECT=False
-      - ALLOWED_HOSTS=localhost,127.0.0.1,web,10.0.2.2
+      - ALLOWED_HOSTS=*
       - POSTGRES_DB=curfewcam
       - POSTGRES_USER=curfewcam
       - POSTGRES_PASSWORD=secretpassword
@@ -42,6 +42,7 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-onboarding@resend.dev}
+      - QR_HMAC_SECRET=${QR_HMAC_SECRET}
     ports:
       - "8000:8000"
     depends_on:
@@ -70,6 +71,7 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-onboarding@resend.dev}
+      - QR_HMAC_SECRET=${QR_HMAC_SECRET}
     depends_on:
       - db
       - redis

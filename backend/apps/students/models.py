@@ -11,7 +11,7 @@ class StudentProfile(TimeStampedModel):
     )
     register_number = models.CharField(max_length=30, unique=True)
     department = models.CharField(max_length=100)
-    year = models.PositiveSmallIntegerField()
+    year = models.PositiveSmallIntegerField(null=True, blank=True)
     semester = models.PositiveSmallIntegerField(default=1)
     hostel_block = models.CharField(max_length=50)
     room_number = models.CharField(max_length=20)

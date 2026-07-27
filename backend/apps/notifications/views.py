@@ -76,19 +76,21 @@ class EmergencyNotificationView(APIView):
         if warden_profile:
             students = students.filter(hostel_block=warden_profile.hostel_name)
 
-        notifications = [
-            Notification(
+        from .services import NotificationService
+        count = 0
+        for s in students:
+            NotificationService.create(
                 user=s.user,
                 title=title,
                 message=message,
-                notification_type=Notification.NotificationType.SYSTEM_ALERT,
+                event_name='EMERGENCY_ALERT',
                 category=Notification.NotificationCategory.SYSTEM,
+                notification_type=Notification.NotificationType.SYSTEM_ALERT,
                 priority=Notification.NotificationPriority.CRITICAL,
             )
-            for s in students
-        ]
-        Notification.objects.bulk_create(notifications)
+            count += 1
+
         return success_response(
-            data={'sent_count': len(notifications)},
-            message=f'Emergency alert sent to {len(notifications)} students',
+            data={'sent_count': count},
+            message=f'Emergency alert sent to {count} students',
         )

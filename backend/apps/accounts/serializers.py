@@ -42,7 +42,7 @@ class UnifiedRegisterSerializer(serializers.Serializer):
 
 
 class UserLoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.CharField()
     password = serializers.CharField(write_only=True, style={'input_type': 'password'})
     role = serializers.ChoiceField(choices=UserRole.choices)
 

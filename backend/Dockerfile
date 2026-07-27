@@ -17,9 +17,9 @@ RUN apt-get update && apt-get install -y \
 # Install python dependencies
 COPY requirements/base.txt ./
 # We could use production.txt if we had one, but base is fine
-RUN pip install --upgrade pip
-RUN pip install -r base.txt
-RUN pip install gunicorn psycopg2-binary celery redis
+RUN pip install --default-timeout=1000 --upgrade pip
+RUN pip install --default-timeout=1000 -r base.txt
+RUN pip install --default-timeout=1000 gunicorn psycopg2-binary celery redis
 
 # Copy project files
 COPY . .

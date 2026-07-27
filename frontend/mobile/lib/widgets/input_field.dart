@@ -11,6 +11,9 @@ class InputField extends StatelessWidget {
   final Widget? trailing;
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final FormFieldValidator<String>? validator;
 
   const InputField({
     super.key,
@@ -22,6 +25,9 @@ class InputField extends StatelessWidget {
     this.trailing,
     this.suffixIcon,
     this.onChanged,
+    this.readOnly = false,
+    this.onTap,
+    this.validator,
   });
 
   @override
@@ -47,6 +53,9 @@ class InputField extends StatelessWidget {
           obscureText: isPassword,
           style: AppTextStyles.bodyMain,
           onChanged: onChanged,
+          readOnly: readOnly,
+          onTap: onTap,
+          validator: validator,
           decoration: InputDecoration(
             hintText: hintText,
             prefixIcon: icon != null ? Icon(icon, color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey)) : null,

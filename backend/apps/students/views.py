@@ -152,39 +152,60 @@ class StudentViolationsView(APIView):
 
 
 class VerifyLocationView(APIView):
-    """Verify if student is on campus based strictly on WiFi SSID."""
+    """Verify if student is on campus based strictly on GPS geofencing."""
     permission_classes = (permissions.IsAuthenticated, IsStudent)
 
     def post(self, request):
         from apps.common.models import Campus
+        import math
         try:
             profile = request.user.student_profile
         except StudentProfile.DoesNotExist:
             return error_response('Student profile not found', status_code=404)
 
-        wifi_ssid = request.data.get('wifi_ssid', '').strip('\"\'')
+        lat = request.data.get('latitude')
+        lng = request.data.get('longitude')
+        
+        if lat is None or lng is None:
+            return error_response('Latitude and longitude required', status_code=400)
+            
+        try:
+            lat = float(lat)
+            lng = float(lng)
+        except ValueError:
+            return error_response('Invalid coordinates', status_code=400)
 
         campus = Campus.objects.first()
         if not campus:
             return error_response('Campus configuration not found', status_code=500)
             
-        if not campus.campus_wifi_ssid:
-            return error_response('WiFi verification not yet configured, contact admin', status_code=400)
+        if campus.campus_latitude is None or campus.campus_longitude is None:
+            return error_response('Campus GPS verification not yet configured, contact admin', status_code=400)
+
+        # Haversine distance
+        R = 6371000 # Earth radius in meters
+        dlat = math.radians(campus.campus_latitude - lat)
+        dlng = math.radians(campus.campus_longitude - lng)
+        a = (math.sin(dlat / 2) * math.sin(dlat / 2) +
+             math.cos(math.radians(lat)) * math.cos(math.radians(campus.campus_latitude)) *
+             math.sin(dlng / 2) * math.sin(dlng / 2))
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = R * c
 
         on_campus = False
         method = 'none'
 
-        if wifi_ssid == campus.campus_wifi_ssid:
+        if distance <= campus.geofence_radius_meters:
             on_campus = True
-            method = 'wifi'
+            method = 'gps'
         else:
-            method = 'wifi_failed'
+            method = 'gps_failed'
 
         profile.is_on_campus = on_campus
         profile.save()
         
         # If successfully on campus, we should mark their active outpass as returned
-        # and trigger a silent notification to the warden. (Task 2)
+        # and trigger a silent notification to the warden. (Task 5)
         if on_campus:
             from apps.outpass.models import Outpass
             from apps.notifications.services import NotificationService
@@ -195,15 +216,25 @@ class VerifyLocationView(APIView):
             if active_outpass:
                 active_outpass.status = Outpass.Status.RETURNED
                 active_outpass.actual_return_time = timezone.now()
-                active_outpass.auto_detect_method = Outpass.AutoDetectMethod.WIFI
+                active_outpass.auto_detect_method = Outpass.AutoDetectMethod.GPS
                 active_outpass.save(update_fields=['status', 'actual_return_time', 'auto_detect_method'])
                 
-                # Notify warden
-                if active_outpass.approved_by:
+                # Notify warden (Task 5)
+                # Find wardens for this student
+                from apps.wardens.models import WardenProfile
+                from django.db.models import Q
+                
+                wardens = WardenProfile.objects.filter(
+                    Q(is_chief_warden=True) |
+                    (Q(hostel_name=profile.hostel_block) &
+                     (Q(assigned_year__isnull=True) | Q(assigned_year=profile.year)))
+                )
+                
+                for warden in wardens:
                     NotificationService.create(
-                        user=active_outpass.approved_by.user,
-                        title=f'Student Returned: {profile.user.full_name}',
-                        message=f'{profile.user.full_name} ({profile.register_number}) has checked in on campus via WiFi verification.',
+                        user=warden.user,
+                        title=f'Student Returned (GPS): {profile.user.full_name}',
+                        message=f'{profile.user.full_name} ({profile.register_number}) has checked in on campus via GPS verification.',
                         event_name='OUTPASS_RETURNED_WARDEN',
                         category=Notification.NotificationCategory.OUTPASS,
                         notification_type=Notification.NotificationType.OUTPASS_STATUS,
@@ -212,6 +243,6 @@ class VerifyLocationView(APIView):
                     )
 
         return success_response(
-            data={'on_campus': on_campus, 'method': method},
-            message='Location verified on campus' if on_campus else 'Not on campus'
+            data={'on_campus': on_campus, 'method': method, 'distance_meters': distance},
+            message='Location verified on campus' if on_campus else f'Not on campus (Distance: {distance:.0f}m)'
         )

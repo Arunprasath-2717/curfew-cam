@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=src.config.settings.development
+    ports:
+      - "8000:8000"
+    entrypoint: ""
+    command: python manage.py runserver 0.0.0.0:8000

@@ -72,6 +72,23 @@ class LoginView(APIView):
             password = serializer.validated_data['password']
             role = serializer.validated_data['role']
 
+            if role == 'watchman' and '@' not in email:
+                # Input is a phone number — resolve to email
+                try:
+                    from apps.watchmen.models import WatchmanProfile
+                    watchman = WatchmanProfile.objects.get(user__phone_number=email)
+                    email = watchman.user.email
+                except WatchmanProfile.DoesNotExist:
+                    try:
+                        from apps.accounts.models import User
+                        user = User.objects.get(phone_number=email, role='watchman')
+                        email = user.email
+                    except User.DoesNotExist:
+                        return Response(
+                            {'success': False, 'error': 'Invalid credentials'},
+                            status=status.HTTP_401_UNAUTHORIZED,
+                        )
+
             user = authenticate(
                 request=request,
                 username=email,
@@ -203,3 +220,15 @@ class VerifyOTPView(APIView):
 
         return success_response(message='OTP verified successfully')
 
+class UpdateFCMTokenView(APIView):
+    """Update FCM token for push notifications."""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        fcm_token = request.data.get('fcm_token')
+        if not fcm_token:
+            return error_response('fcm_token is required')
+            
+        request.user.fcm_token = fcm_token
+        request.user.save(update_fields=['fcm_token'])
+        return success_response(message='FCM token updated successfully')

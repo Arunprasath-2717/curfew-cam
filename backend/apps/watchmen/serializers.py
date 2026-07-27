@@ -36,5 +36,5 @@ class GateScanSerializer(serializers.ModelSerializer):
 
 class QRScanRequestSerializer(serializers.Serializer):
     qr_token = serializers.CharField()
-    scan_type = serializers.ChoiceField(choices=['EXIT', 'RETURN'])
+    scan_type = serializers.ChoiceField(choices=['EXIT', 'RETURN'], required=False, allow_null=True, allow_blank=True)
     gate = serializers.CharField(required=False, allow_blank=True)

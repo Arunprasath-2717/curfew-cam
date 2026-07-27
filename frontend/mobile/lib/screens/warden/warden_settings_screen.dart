@@ -114,7 +114,7 @@ class _WardenSettingsScreenState extends State<WardenSettingsScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text('CurfewCam', style: TextStyle(fontWeight: FontWeight.w600)),
-        leading: IconButton(icon: Icon(Icons.menu), onPressed: () {}),
+        leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
         actions: [
           IconButton(icon: Icon(Icons.notifications), onPressed: () {}),
         ],
@@ -125,21 +125,8 @@ class _WardenSettingsScreenState extends State<WardenSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Profile Header Section
-              const SizedBox(height: 24),
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  Container(
-                    width: 96, height: 96,
-                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Theme.of(context).dividerColor, width: 2), image: DecorationImage(image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuA2I6HOKC9BZsZcFIIVVDoEdvKFHBU9STBGoKyTqya49uZVMdx_9rx3vvlFkFAlKeGK_DR8lduaNcLVaFXQhnnzKGc2Qr7QyooMYHYtG_XoARa20rYIJVEdEMAe1SIOoof2dR2w2fk1OTclaf_yDD-2TTGggT1aiDh2Qdmy_CrpgC_iB7Q6_cWFYmtHE5IuRfKjn1DEYvEeSCKDOgQvJg1xru16Kgc_kQZN0RDDgrb9R8wDqmhhByzgjrwC2CyDW7GiDzd0rbuSEQ0'), fit: BoxFit.cover)),
-                  ),
-                ],
-              ),
+              // Profile Header Removed
               const SizedBox(height: 16),
-              Text('Chief Warden', style: AppTextStyles.screenTitle.copyWith(fontSize: 24, color: Theme.of(context).primaryColor)),
-              Text('Hostel Block A • Admin Access', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
-              const SizedBox(height: 32),
               
               // Settings Container
               Container(

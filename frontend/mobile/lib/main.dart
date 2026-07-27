@@ -8,12 +8,17 @@ import 'providers/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'widgets/auth_wrapper.dart';
+import 'services/push_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize Push Notifications
+  await PushNotificationService().initialize();
+
   runApp(
     MultiProvider(
       providers: [

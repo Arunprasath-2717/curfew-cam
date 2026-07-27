@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../providers/outpass_provider.dart';
 
@@ -18,7 +17,6 @@ class QrScannerScreen extends StatefulWidget {
 
 class _QrScannerScreenState extends State<QrScannerScreen> {
   MobileScannerController? _scannerController;
-  bool _isExitMode = true;
   bool _hasPermission = false;
   bool _permissionDenied = false;
   bool _isProcessing = false;
@@ -78,10 +76,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
     final provider = Provider.of<OutpassProvider>(context, listen: false);
 
-    final result = await provider.validateAndConsumeToken(
-      payload,
-      _isExitMode ? 'EXIT' : 'RETURN',
-    );
+    // Auto-detect exit/return directly from outpass state
+    final result = await provider.validateAndConsumeToken(payload);
 
     if (!mounted) return;
 
@@ -170,19 +166,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 24),
-            // Mode Toggle
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 48),
-              padding: EdgeInsets.all(4),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.3))),
-              child: Row(
-                children: [
-                  Expanded(child: GestureDetector(onTap: () => setState(() => _isExitMode = true), child: Container(padding: EdgeInsets.symmetric(vertical: 12), decoration: BoxDecoration(color: _isExitMode ? Theme.of(context).colorScheme.secondary : Colors.transparent, borderRadius: BorderRadius.circular(8)), child: Text('EXIT SCAN', textAlign: TextAlign.center, style: AppTextStyles.badgeCaps.copyWith(color: _isExitMode ? Theme.of(context).primaryColor : Colors.white.withValues(alpha: 0.6)))))),
-                  Expanded(child: GestureDetector(onTap: () => setState(() => _isExitMode = false), child: Container(padding: EdgeInsets.symmetric(vertical: 12), decoration: BoxDecoration(color: !_isExitMode ? Theme.of(context).colorScheme.secondary : Colors.transparent, borderRadius: BorderRadius.circular(8)), child: Text('RETURN SCAN', textAlign: TextAlign.center, style: AppTextStyles.badgeCaps.copyWith(color: !_isExitMode ? Theme.of(context).primaryColor : Colors.white.withValues(alpha: 0.6)))))),
-                ],
-              ),
-            ),
+            const SizedBox(height: 16),
             const Spacer(),
             // Viewfinder with real camera or permission message
             SizedBox(

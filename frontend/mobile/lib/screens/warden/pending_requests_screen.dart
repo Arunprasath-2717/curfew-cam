@@ -138,6 +138,22 @@ class _PendingRequestsScreenState extends State<PendingRequestsScreen> {
                                               ),
                                             ],
                                           ),
+                                          if (item['created_at'] != null) ...[
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                Icon(Icons.schedule_rounded, size: 14, color: AppColors.accentBlue),
+                                                const SizedBox(width: 4),
+                                                Flexible(
+                                                  child: Text(
+                                                    'Requested: ${item['created_at'].toString().split('T').first} ${item['created_at'].toString().split('T').length > 1 ? item['created_at'].toString().split('T')[1].substring(0, 5) : ''}',
+                                                    style: AppTextStyles.bodySecondary.copyWith(fontSize: 12, color: AppColors.accentBlue),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                           if (item['reason'] != null && item['reason'].toString().isNotEmpty) ...[
                                             const SizedBox(height: 2),
                                             Row(

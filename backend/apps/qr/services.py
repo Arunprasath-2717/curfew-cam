@@ -13,6 +13,7 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from .models import QRPass
+from apps.outpass.models import Outpass
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,7 @@ def generate_qr_for_outpass(outpass):
         hmac_signature=signature,
         encrypted_payload=encoded_payload,
         expires_at=expiry,
+        max_scans=2,
     )
     qr_pass.qr_image.save(
         f'qr_{outpass.student.register_number}_{outpass.id}.png',
@@ -158,13 +160,19 @@ def validate_qr_token(token):
         if qr_pass.scan_count >= qr_pass.max_scans:
             return False, 'Maximum scans exceeded'
 
-        # Check outpass status
-        if qr_pass.outpass.status in ['cancelled', 'rejected', 'overdue']:
+        # Check outpass status (real enum values are uppercase — was previously
+        # comparing against lowercase strings that could never match)
+        if qr_pass.outpass.status in [
+            Outpass.Status.CANCELLED, Outpass.Status.REJECTED, Outpass.Status.OVERDUE
+        ]:
             return False, f'Outpass is {qr_pass.outpass.status}'
 
-        # Check if the current time is valid for the outpass window
+        # Check if the current time is valid for the outpass window.
+        # expected_return_date is a plain date — comparing it directly to an
+        # aware datetime raises TypeError. Use the expected_return_at property,
+        # which combines date+time into a proper aware datetime.
         now = timezone.now()
-        if now > qr_pass.outpass.expected_return_date:
+        if now > qr_pass.outpass.expected_return_at:
             return False, 'Outpass return time has passed'
 
         # Increment scan count

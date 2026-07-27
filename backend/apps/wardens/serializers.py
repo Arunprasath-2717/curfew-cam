@@ -41,13 +41,13 @@ class ManageStudentSerializer(serializers.Serializer):
 
 class ManageWardenSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    is_chief_warden = serializers.BooleanField(required=False, default=False)
-
-class WardenSignupSerializer(serializers.Serializer):
-    email = serializers.EmailField()
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, min_length=8)
     employee_id = serializers.CharField(max_length=30)
     hostel_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True)
+    assigned_year = serializers.IntegerField(required=False, allow_null=True)
+    is_chief_warden = serializers.BooleanField(required=False, default=False)
+
+

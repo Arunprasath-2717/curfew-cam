@@ -56,10 +56,8 @@ def register_user_with_domain_check(validated_data):
         role = UserRole.STUDENT
         if not validated_data.get('register_number'):
             raise ValidationError({'register_number': ["Register number is required for students."]})
-    elif email.endswith('@aiet.ac.in'):
-        role = UserRole.WARDEN
     else:
-        raise ValidationError({'email': ["Only @srishakthi.ac.in (students) and @aiet.ac.in (wardens) domains are allowed."]})
+        raise ValidationError({'email': ["Only @srishakthi.ac.in domains are allowed for students."]})
 
     if User.objects.filter(email__iexact=email).exists():
         raise ValidationError({'email': ["This email is already in use"]})
@@ -88,10 +86,6 @@ def register_user_with_domain_check(validated_data):
             profile.year = validated_data.get('year') or 1
             profile.hostel_block = validated_data.get('block', '').strip()
             profile.room_number = validated_data.get('room_number', '').strip()
-            profile.save()
-        elif role == UserRole.WARDEN:
-            profile = WardenProfile.objects.get(user=user)
-            profile.hostel_name = validated_data.get('block', '').strip()
             profile.save()
 
     # Generate and send verification OTP

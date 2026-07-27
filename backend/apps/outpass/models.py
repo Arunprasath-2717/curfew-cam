@@ -46,6 +46,7 @@ class Outpass(TimeStampedModel):
 
     actual_exit_time = models.DateTimeField(null=True, blank=True)
     actual_return_time = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     rejection_reason = models.TextField(blank=True)
@@ -70,13 +71,25 @@ class Outpass(TimeStampedModel):
     @classmethod
     def mark_overdue_outpasses(cls, queryset=None):
         qs = queryset if queryset is not None else cls.objects.all()
+        now = timezone.now()
+        
+        # 1. Mark APPROVED passes overdue if expected return date/time has passed without exit or return
         overdue_ids = [
             op.id for op in qs.filter(status=cls.Status.APPROVED)
-            if timezone.now() > op.expected_return_at
+            if now > op.expected_return_at
         ]
         if overdue_ids:
             cls.objects.filter(id__in=overdue_ids).update(status=cls.Status.OVERDUE)
-        return len(overdue_ids)
+
+        # 2. Auto-expire PENDING passes whose expected return time has already passed
+        expired_pending_ids = [
+            op.id for op in qs.filter(status=cls.Status.PENDING)
+            if now > op.expected_return_at
+        ]
+        if expired_pending_ids:
+            cls.objects.filter(id__in=expired_pending_ids).update(status=cls.Status.EXPIRED)
+
+        return len(overdue_ids) + len(expired_pending_ids)
 
     @property
     def is_late(self):

@@ -179,7 +179,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> with Single
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final item = items[index];
           final user = item['user'] ?? {};

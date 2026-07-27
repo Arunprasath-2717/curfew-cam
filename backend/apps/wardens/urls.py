@@ -23,5 +23,5 @@ urlpatterns = [
     path('manage/audit-log/', management_views.AuditLogListView.as_view(), name='manage-audit-log'),
 
     # Warden Setup (Onboarding)
-    path('setup/signup/', management_views.WardenSignupView.as_view(), name='setup-signup'),
+
 ]

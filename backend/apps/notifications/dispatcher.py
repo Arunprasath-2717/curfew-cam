@@ -47,3 +47,12 @@ class NotificationDispatcher:
                 logger.warning(
                     f"Email dispatch skipped for notification {notification.id}: {e}"
                 )
+
+        # FCM dispatch via Celery
+        try:
+            from .tasks import send_fcm_notification_async
+            send_fcm_notification_async.delay(notification.id)
+        except Exception as e:
+            logger.warning(
+                f"FCM dispatch skipped for notification {notification.id}: {e}"
+            )

@@ -14,6 +14,7 @@ class _WardenDetectionScreenState extends State<WardenDetectionScreen> {
   List<dynamic> _cameras = [];
   List<dynamic> _alerts = [];
   bool _isLoading = true;
+  bool _isFetching = false;
   Timer? _pollingTimer;
 
   @override
@@ -32,6 +33,9 @@ class _WardenDetectionScreenState extends State<WardenDetectionScreen> {
   }
 
   Future<void> _fetchData({bool showLoading = true}) async {
+    if (_isFetching) return;
+    _isFetching = true;
+
     if (showLoading) {
       setState(() => _isLoading = true);
     }
@@ -60,6 +64,8 @@ class _WardenDetectionScreenState extends State<WardenDetectionScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    } finally {
+      _isFetching = false;
     }
   }
 

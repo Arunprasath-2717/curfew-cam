@@ -6,8 +6,6 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/status_chip.dart';
 import '../../providers/outpass_provider.dart';
 import '../../providers/auth_service.dart';
-import 'package:network_info_plus/network_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 
 class StudentDashboardScreen extends StatefulWidget {
@@ -28,7 +26,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   Timer? _autoReturnTimer;
-  static const String COLLEGE_WIFI_SSID = 'LifeatSriShakthi';
+  Timer? _countdownTimer;
 
   @override
   void initState() {
@@ -37,8 +35,14 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _fetchData();
     _autoReturnTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
-      if (_activeRequest != null && _activeRequest!['status'] == 'ACTIVE') {
-        _runAutoDetect();
+      // Removed auto detect
+    });
+    _countdownTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
+      if (mounted && _activeRequest != null) {
+        final st = _activeRequest!['status'];
+        if (st == 'ACTIVE' || st == 'APPROVED') {
+          setState(() {}); // trigger rebuild for countdown
+        }
       }
     });
   }
@@ -46,6 +50,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
   @override
   void dispose() {
     _autoReturnTimer?.cancel();
+    _countdownTimer?.cancel();
     _animCtrl.dispose();
     super.dispose();
   }
@@ -79,72 +84,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
     }
   }
 
-  Future<void> _runAutoDetect() async {
-    final status = await Permission.location.request();
-    if (status.isDenied || status.isPermanentlyDenied) return;
-    
-    try {
-      final info = NetworkInfo();
-      final wifiName = await info.getWifiName();
-      if (wifiName != null) {
-        final res = await _outpassProvider.verifyLocation({
-          'wifi_ssid': wifiName,
-        });
-        if (res['success'] == true && res['data']?['on_campus'] == true) {
-          _fetchData();
-        }
-      }
-    } catch (e) {
-      // Ignore
-    }
-  }
 
-  Future<void> _verifyLocation() async {
-    final status = await Permission.location.request();
-    if (status.isDenied || status.isPermanentlyDenied) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permission required for verification.')),
-        );
-      }
-      return;
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verifying location...')),
-      );
-    }
-
-    try {
-      final info = NetworkInfo();
-      final wifiName = await info.getWifiName();
-
-      final res = await _outpassProvider.verifyLocation({
-        'wifi_ssid': wifiName,
-      });
-
-      if (mounted) {
-        final success = res['success'] == true && res['data']?['on_campus'] == true;
-        if (success) {
-          _fetchData(); // Refresh UI to show Returned status
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(res['message'] ?? 'Failed to verify WiFi SSID.'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error verifying location.')),
-        );
-      }
-    }
-  }
 
   void _onNavTap(int index) {
     if (index == 1) {
@@ -282,8 +222,33 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
     );
   }
 
+  String _getCountdownText() {
+    if (_activeRequest == null || _activeRequest!.isEmpty) return '';
+    final dateStr = _activeRequest!['expected_return_date'];
+    final timeStr = _activeRequest!['expected_return_time'];
+    if (dateStr == null || timeStr == null) return '';
+    
+    final returnTime = DateTime.tryParse('$dateStr $timeStr');
+    if (returnTime == null) return '';
+    
+    final diff = returnTime.difference(DateTime.now());
+    if (diff.isNegative) {
+      return 'OVERDUE by ${diff.abs().inHours}h ${diff.abs().inMinutes.remainder(60)}m';
+    }
+    
+    final days = diff.inDays;
+    final hours = diff.inHours.remainder(24);
+    final minutes = diff.inMinutes.remainder(60);
+    
+    if (days > 0) {
+      return 'Returns in ${days}d ${hours}h ${minutes}m';
+    } else {
+      return 'Returns in ${hours}h ${minutes}m';
+    }
+  }
+
   Widget _buildStatusCard() {
-    if (_activeRequest == null) {
+    if (_activeRequest == null || _activeRequest!.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
@@ -313,6 +278,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
     }
 
     final status = _activeRequest!['status'] ?? '';
+    final isOverdue = _getCountdownText().startsWith('OVERDUE');
+    final exitDate = _activeRequest!['exit_date'];
+    final returnDate = _activeRequest!['expected_return_date'];
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -332,20 +301,43 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
             ],
           ),
           const SizedBox(height: 16),
-          Text(_activeRequest!['destination'] ?? 'Unknown', style: AppTextStyles.screenTitle),
+          Text(_activeRequest!['destination']?.toString().isNotEmpty == true ? _activeRequest!['destination'] : 'Unknown', style: AppTextStyles.screenTitle),
           const SizedBox(height: 14),
-          _infoRow(Icons.calendar_today_rounded, 'Leave', '${_activeRequest!['exit_date'] ?? ''} ${_activeRequest!['exit_time'] ?? ''}'),
-          const SizedBox(height: 8),
-          _infoRow(Icons.update_rounded, 'Return', '${_activeRequest!['expected_return_date'] ?? ''} ${_activeRequest!['expected_return_time'] ?? ''}'),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _verifyLocation,
-              icon: const Icon(Icons.location_on, size: 18),
-              label: const Text('Confirm I\'m on campus'),
+          
+          if (exitDate != null && exitDate.toString().isNotEmpty) ...[
+            _infoRow(Icons.calendar_today_rounded, 'Leave', '${_activeRequest!['exit_date']} ${_activeRequest!['exit_time'] ?? ''}'),
+            const SizedBox(height: 8),
+          ],
+          
+          if (returnDate != null && returnDate.toString().isNotEmpty) ...[
+            _infoRow(Icons.update_rounded, 'Return', '${_activeRequest!['expected_return_date']} ${_activeRequest!['expected_return_time'] ?? ''}'),
+            const SizedBox(height: 16),
+          ],
+          
+          if (status == 'ACTIVE' || status == 'APPROVED') ...[
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 500),
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isOverdue ? AppColors.error.withOpacity(0.1) : AppColors.accentBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isOverdue ? AppColors.error : AppColors.accentBlue),
+              ),
+              child: Text(
+                _getCountdownText(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isOverdue ? AppColors.error : AppColors.accentBlue,
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 16),
+          ],
+          
+
         ],
       ),
     );

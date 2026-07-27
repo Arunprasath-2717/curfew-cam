@@ -32,9 +32,6 @@ class WardenDashboardView(APIView):
             if hostel:
                 students_qs = students_qs.filter(hostel_block=hostel)
                 outpass_qs = outpass_qs.filter(student__hostel_block=hostel)
-            if warden_profile.assigned_year:
-                students_qs = students_qs.filter(year=warden_profile.assigned_year)
-                outpass_qs = outpass_qs.filter(student__year=warden_profile.assigned_year)
 
         today = timezone.now().date()
         total = students_qs.count()
@@ -67,14 +64,20 @@ class PendingOutpassListView(generics.ListAPIView):
         if warden_profile and not warden_profile.is_chief_warden and self.request.user.role != UserRole.ADMIN_WARDEN:
             if warden_profile.hostel_name:
                 qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
-            if warden_profile.assigned_year:
-                qs = qs.filter(student__year=warden_profile.assigned_year)
-        return qs
 
-    def list(self, request, *args, **kwargs):
-        qs = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(qs, many=True)
-        return success_response(data=serializer.data, message='Pending outpasses retrieved')
+        days = self.request.query_params.get('days')
+        if days:
+            try:
+                days_int = int(days)
+                if days_int > 0:
+                    qs = qs.filter(created_at__gte=timezone.now() - timedelta(days=days_int))
+            except ValueError:
+                pass
+        else:
+            # Default 14 days window for pending requests
+            qs = qs.filter(created_at__gte=timezone.now() - timedelta(days=14))
+
+        return qs
 
 
 class OutpassApprovalView(APIView):
@@ -90,6 +93,12 @@ class OutpassApprovalView(APIView):
         if outpass.status != Outpass.Status.PENDING:
             return error_response('Outpass is not pending')
 
+        now = timezone.now()
+        if now > outpass.expected_return_at:
+            outpass.status = Outpass.Status.EXPIRED
+            outpass.save()
+            return error_response('Cannot approve outpass: the expected return time has already passed. The request has been marked as expired.')
+
         serializer = OutpassApprovalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         action = serializer.validated_data['action']
@@ -99,10 +108,12 @@ class OutpassApprovalView(APIView):
         from apps.notifications.services import NotificationService
         from apps.notifications.models import Notification
 
+        outpass.reviewed_at = now
         if action == 'approve':
             outpass.status = Outpass.Status.APPROVED
             outpass.approved_by = warden_profile
             outpass.warden_notes = serializer.validated_data.get('warden_notes', '')
+            outpass.save()
             NotificationService.create(
                 user=outpass.student.user,
                 title='Outpass Approved',
@@ -117,6 +128,7 @@ class OutpassApprovalView(APIView):
             outpass.approved_by = warden_profile
             outpass.rejection_reason = serializer.validated_data.get('rejection_reason', 'Rejected by warden')
             outpass.warden_notes = serializer.validated_data.get('warden_notes', '')
+            outpass.save()
             NotificationService.create(
                 user=outpass.student.user,
                 title='Outpass Rejected',
@@ -169,40 +181,51 @@ class LateStudentsView(generics.ListAPIView):
     def get_queryset(self):
         Outpass.mark_overdue_outpasses()
 
-        qs = Outpass.objects.filter(status=Outpass.Status.ACTIVE).select_related('student__user')
+        qs = Outpass.objects.filter(
+            status=Outpass.Status.ACTIVE,
+            return_time__lt=timezone.now()
+        ).select_related('student__user', 'approved_by__user').order_by('-created_at')
         warden_profile = getattr(self.request.user, 'warden_profile', None)
         if warden_profile and not warden_profile.is_chief_warden and self.request.user.role != UserRole.ADMIN_WARDEN:
             if warden_profile.hostel_name:
                 qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
-            if warden_profile.assigned_year:
-                qs = qs.filter(student__year=warden_profile.assigned_year)
-        # Filter in Python since is_late is a property
-        return [op for op in qs if op.is_late]
+        return qs
 
-    def list(self, request, *args, **kwargs):
-        late = self.get_queryset()
-        serializer = OutpassSerializer(late, many=True)
-        return success_response(data=serializer.data, message=f'{len(late)} late student(s)')
 
+from rest_framework import serializers
+
+class MovementLogSerializer(serializers.ModelSerializer):
+    student = serializers.CharField(source='student.user.full_name')
+    register_number = serializers.CharField(source='student.register_number')
+    recorded_by = serializers.CharField(source='recorded_by.full_name', allow_null=True)
+    timestamp = serializers.DateTimeField(source='created_at')
+
+    class Meta:
+        from apps.common.models import MovementLog
+        model = MovementLog
+        fields = ['id', 'student', 'register_number', 'action', 'gate', 'recorded_by', 'timestamp', 'notes']
 
 class MovementLogListView(generics.ListAPIView):
     """List movement logs."""
     permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
+    serializer_class = MovementLogSerializer
 
-    def get(self, request):
+    def get_queryset(self):
         from apps.common.models import MovementLog
-        logs = MovementLog.objects.select_related('student__user', 'recorded_by').order_by('-created_at')[:100]
-        data = [{
-            'id': str(log.id),
-            'student': log.student.user.full_name,
-            'register_number': log.student.register_number,
-            'action': log.action,
-            'gate': log.gate,
-            'recorded_by': log.recorded_by.full_name if log.recorded_by else None,
-            'timestamp': log.created_at,
-            'notes': log.notes,
-        } for log in logs]
-        return success_response(data=data)
+        qs = MovementLog.objects.select_related('student__user', 'recorded_by').order_by('-created_at')
+        
+        days = self.request.query_params.get('days')
+        if days:
+            try:
+                days_int = int(days)
+                if days_int > 0:
+                    qs = qs.filter(created_at__gte=timezone.now() - timedelta(days=days_int))
+            except ValueError:
+                pass
+        else:
+            qs = qs.filter(created_at__gte=timezone.now() - timedelta(days=14))
+            
+        return qs
 
 
 class WardenReportsView(APIView):
@@ -220,8 +243,6 @@ class WardenReportsView(APIView):
         if warden_profile and not warden_profile.is_chief_warden and request.user.role != UserRole.ADMIN_WARDEN:
             if warden_profile.hostel_name:
                 outpass_qs = outpass_qs.filter(student__hostel_block=warden_profile.hostel_name)
-            if warden_profile.assigned_year:
-                outpass_qs = outpass_qs.filter(student__year=warden_profile.assigned_year)
 
         if period == 'daily':
             filtered = outpass_qs.filter(created_at__date=today)
@@ -278,15 +299,16 @@ class WardenOutpassHistoryView(generics.ListAPIView):
         if warden_profile and not warden_profile.is_chief_warden and self.request.user.role != UserRole.ADMIN_WARDEN:
             if warden_profile.hostel_name:
                 qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
-            if warden_profile.assigned_year:
-                qs = qs.filter(student__year=warden_profile.assigned_year)
-        return qs
 
-    def list(self, request, *args, **kwargs):
-        qs = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(qs, many=True)
-        return success_response(data=serializer.data, message='Outpass history retrieved')
+        days = self.request.query_params.get('days')
+        if days:
+            try:
+                days_int = int(days)
+                if days_int > 0:
+                    qs = qs.filter(created_at__gte=timezone.now() - timedelta(days=days_int))
+            except ValueError:
+                pass
+        else:
+            qs = qs.filter(created_at__gte=timezone.now() - timedelta(days=14))
+            
+        return qs

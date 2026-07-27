@@ -22,7 +22,7 @@ pytz==2026.2
 PyYAML==6.0.3
 qrcode==8.2
 referencing==0.37.0
-rpds-py==0.28.0
+rpds-py
 sqlparse==0.5.5
 uritemplate==4.2.0
 celery==5.4.0
@@ -31,3 +31,4 @@ gunicorn==23.0.0
 dj-database-url
 whitenoise
 resend==2.34.0
+firebase-admin

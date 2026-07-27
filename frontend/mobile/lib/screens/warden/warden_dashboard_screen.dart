@@ -178,7 +178,14 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
           const SizedBox(height: 12),
           Text('Hello, $_wardenName', style: AppTextStyles.greeting.copyWith(color: Colors.white, fontSize: 28)),
           const SizedBox(height: 4),
-          Text('$_hostelName Hostel Overview', style: AppTextStyles.bodySecondary.copyWith(color: Colors.white38)),
+          Text(
+            _hostelName.isEmpty || _hostelName == 'Hostel'
+                ? 'Hostel Management Overview'
+                : (_hostelName.toLowerCase().contains('hostel')
+                    ? '$_hostelName Overview'
+                    : '$_hostelName Hostel Overview'),
+            style: AppTextStyles.bodySecondary.copyWith(color: Colors.white38),
+          ),
         ],
       ),
     );
@@ -188,8 +195,8 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
     final items = [
       _StatItem('Pending', '${_stats['pending_requests'] ?? 0}', Icons.pending_actions_rounded, AppColors.amber, AppColors.gradientAmber),
       _StatItem('Out Now', '${_stats['students_outside'] ?? 0}', Icons.directions_walk_rounded, AppColors.accentBlue, AppColors.gradientBlue),
+      _StatItem('In Hostel', '${_stats['students_in_hostel'] ?? 0}', Icons.home_rounded, AppColors.success, AppColors.gradientSuccess),
       _StatItem('Late', '${_stats['late_returns'] ?? 0}', Icons.timer_off_rounded, AppColors.error, AppColors.gradientError),
-      _StatItem('Approved Today', '${_stats['approved_today'] ?? 0}', Icons.check_circle_rounded, AppColors.success, AppColors.gradientSuccess),
     ];
 
     // mainAxisExtent fixes each card at exactly 112 dp tall regardless of

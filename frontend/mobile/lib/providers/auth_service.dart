@@ -18,7 +18,8 @@ class AuthService {
     const port = '8000';
     const apiPrefix = '/api/v1';
 
-    return 'http://10.0.2.2:$port$apiPrefix';
+    // Using local LAN IP for physical device
+    return 'http://192.168.77.4:$port$apiPrefix';
   }
 
   // ---------------------------------------------------------------------------
