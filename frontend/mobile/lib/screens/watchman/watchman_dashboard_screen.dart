@@ -34,16 +34,22 @@ class _WatchmanDashboardScreenState extends State<WatchmanDashboardScreen> {
     }
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning, Officer';
+    if (hour < 17) return 'Good afternoon, Officer';
+    return 'Good evening, Officer';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       drawer: const AppDrawer(currentRole: 'watchman'),
       appBar: AppBar(
-        // automaticallyImplyLeading is true by default, which adds the hamburger menu
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-        title: Row(children: [Icon(Icons.security, size: 20), SizedBox(width: 8), Text('GateControl', style: TextStyle(fontWeight: FontWeight.bold))]),
+        title: const Row(children: [Icon(Icons.security, size: 20), SizedBox(width: 8), Text('CurfewCam', style: TextStyle(fontWeight: FontWeight.bold))]),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -55,7 +61,7 @@ class _WatchmanDashboardScreenState extends State<WatchmanDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Good afternoon, Officer', style: AppTextStyles.bodySecondary),
+                    Text(_getGreeting(), style: AppTextStyles.bodySecondary),
                     const SizedBox(height: 16),
                     Row(
                       children: [

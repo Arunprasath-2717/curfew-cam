@@ -59,34 +59,32 @@ class StatusChip extends StatelessWidget {
         icon = Icons.directions_walk_rounded;
         break;
       case StatusType.late:
-        bg = AppColors.error.withOpacity(0.12); // Actually requirement says "amber=active/late" wait.
-        // I will use amber for late as per requirement but maybe deep amber? Let's use AppColors.amber for both.
-        bg = AppColors.amber.withOpacity(0.12);
-        fg = AppColors.amber;
+        bg = AppColors.error.withValues(alpha: 0.12);
+        fg = AppColors.error;
         icon = Icons.timer_off_rounded;
         break;
       case StatusType.exit:
-        bg = AppColors.accentIndigo.withOpacity(0.12);
+        bg = AppColors.accentIndigo.withValues(alpha: 0.12);
         fg = AppColors.accentIndigo;
         icon = Icons.exit_to_app_rounded;
         break;
       case StatusType.returnScan:
-        bg = AppColors.accentTeal.withOpacity(0.12);
+        bg = AppColors.accentTeal.withValues(alpha: 0.12);
         fg = AppColors.accentTeal;
         icon = Icons.login_rounded;
         break;
       case StatusType.expired:
-        bg = Colors.grey.withOpacity(0.12);
+        bg = Colors.grey.withValues(alpha: 0.12);
         fg = Colors.grey;
         icon = Icons.history_rounded;
         break;
       case StatusType.overdue:
-        bg = AppColors.error.withOpacity(0.12);
+        bg = AppColors.error.withValues(alpha: 0.12);
         fg = AppColors.error;
         icon = Icons.timer_off_rounded;
         break;
       default:
-        bg = Colors.grey.withOpacity(0.12);
+        bg = Colors.grey.withValues(alpha: 0.12);
         fg = Colors.grey;
         icon = Icons.info_outline_rounded;
     }

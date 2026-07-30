@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../providers/auth_service.dart';
 
 /// Resolves a relative avatar path (e.g. "/media/avatars/foo.jpg") or an
 /// already-absolute URL to a full URL usable by NetworkImage.
@@ -6,9 +7,9 @@ import 'package:flutter/material.dart';
 String? resolveAvatarUrl(String? raw) {
   if (raw == null || raw.trim().isEmpty) return null;
   if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-  // Relative path from Django — prepend the server root (strip /api/v1).
-  // On Android emulator 10.0.2.2 maps to host localhost.
-  return 'http://10.0.2.2:8000$raw';
+  // Relative path from Django — strip /api/v1 from AuthService.baseUrl
+  final root = AuthService.baseUrl.replaceAll(RegExp(r'/api/v[0-9]+$'), '');
+  return '$root$raw';
 }
 
 /// Displays a circular avatar.

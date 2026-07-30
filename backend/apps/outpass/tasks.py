@@ -46,6 +46,11 @@ def check_late_returns():
                     priority=Notification.NotificationPriority.HIGH,
                     related_outpass=outpass,
                 )
+
+            # Notify Guardians if registered
+            for guardian in outpass.student.guardians.all():
+                if guardian.email:
+                    logger.info(f"Notifying guardian {guardian.name} ({guardian.email}) of late return for {outpass.student.user.full_name}")
             logger.warning('Late return detected (marked overdue): %s', outpass)
 
 

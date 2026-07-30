@@ -44,8 +44,8 @@ class MyApp extends StatelessWidget {
           navigatorKey: LiveAlertService.navigatorKey,
           title: 'CurfewCam',
           theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.lightTheme,
-          themeMode: ThemeMode.light,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
           // AuthWrapper is the home widget — it handles splash/login/dashboard.
           home: const AuthWrapper(),
           routes: AppRouter.routes,
