@@ -29,13 +29,10 @@ class AuthService {
       return 'http://localhost:$port$apiPrefix';
     }
 
-    try {
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:$port$apiPrefix';
-      }
-    } catch (_) {}
-
-    return 'http://127.0.0.1:$port$apiPrefix';
+    // Default to the computer's Wi-Fi network IP address (10.20.17.66) so both
+    // real physical phones on Wi-Fi and emulators can connect without network errors.
+    const networkIp = '10.20.17.66';
+    return 'http://$networkIp:$port$apiPrefix';
   }
 
   // ---------------------------------------------------------------------------
