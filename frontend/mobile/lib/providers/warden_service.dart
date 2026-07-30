@@ -89,6 +89,17 @@ class WardenService {
   static Future<Map<String, dynamic>> getAuditLogs() =>
       ApiClient.request('GET', '/wardens/manage/audit-log/');
 
+  static Future<Map<String, dynamic>> bulkImportStudents(String csvContent) =>
+      ApiClient.request('POST', '/wardens/manage/students/bulk-import/', body: {
+        'csv_content': csvContent,
+      });
+
+  static Future<Map<String, dynamic>> runPromotion() =>
+      ApiClient.request('POST', '/wardens/manage/run-promotion/');
+
+  static Future<Map<String, dynamic>> deletePassedOutStudents() =>
+      ApiClient.request('POST', '/wardens/manage/students/delete-passed-out/');
+
   static Future<Map<String, dynamic>> startDetectionStream() =>
       ApiClient.request('POST', '/detection/stream/start/');
 

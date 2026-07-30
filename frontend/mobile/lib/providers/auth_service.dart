@@ -14,12 +14,28 @@ class AuthService {
   /// Automatically picks the right host for Android emulator vs physical device.
   /// - Android emulator: 10.0.2.2 (maps to host machine's localhost)
   /// - Physical device / iOS simulator / other: localhost
+  static String? _overrideBaseUrl;
+  static void setOverrideBaseUrl(String url) => _overrideBaseUrl = url;
+
   static String get baseUrl {
+    if (_overrideBaseUrl != null && _overrideBaseUrl!.isNotEmpty) {
+      return _overrideBaseUrl!;
+    }
+
     const port = '8000';
     const apiPrefix = '/api/v1';
 
-    // Using local LAN IP for physical device
-    return 'http://192.168.77.4:$port$apiPrefix';
+    if (kIsWeb) {
+      return 'http://localhost:$port$apiPrefix';
+    }
+
+    try {
+      if (Platform.isAndroid) {
+        return 'http://10.0.2.2:$port$apiPrefix';
+      }
+    } catch (_) {}
+
+    return 'http://127.0.0.1:$port$apiPrefix';
   }
 
   // ---------------------------------------------------------------------------

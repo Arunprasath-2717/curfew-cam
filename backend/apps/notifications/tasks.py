@@ -113,9 +113,34 @@ def send_fcm_notification_async(notification_id):
                 title=notification.title,
                 body=notification.message,
             ),
+            android=messaging.AndroidConfig(
+                priority='high',
+                notification=messaging.AndroidNotification(
+                    channel_id='high_importance_channel',
+                    priority='max',
+                    default_sound=True,
+                    default_vibrate_timings=True,
+                    visibility='public',
+                ),
+            ),
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                        alert=messaging.ApsAlert(
+                            title=notification.title,
+                            body=notification.message,
+                        ),
+                        sound='default',
+                        badge=1,
+                    )
+                )
+            ),
             data={
                 "event_id": str(notification.id),
-                "category": notification.category,
+                "category": str(notification.category),
+                "title": str(notification.title),
+                "message": str(notification.message),
+                "priority": str(notification.priority),
             },
             token=token,
         )

@@ -173,7 +173,7 @@ class AuditLogListView(generics.ListAPIView):
 
 class RunPromotionView(APIView):
     """Manually trigger yearly promotion."""
-    permission_classes = (permissions.IsAuthenticated, IsAdminWarden)
+    permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
 
     def post(self, request):
         from apps.students.tasks import run_yearly_promotion
@@ -182,5 +182,158 @@ class RunPromotionView(APIView):
             data=counts,
             message='Promotion cycle completed successfully.'
         )
+
+class BulkImportStudentsView(APIView):
+    """Bulk import students via CSV/Excel file."""
+    permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
+
+    def post(self, request):
+        import csv
+        import io
+
+        file_data = None
+        if 'file' in request.FILES:
+            uploaded_file = request.FILES['file']
+            file_data = uploaded_file.read().decode('utf-8-sig')
+        elif 'csv_content' in request.data:
+            file_data = request.data['csv_content']
+
+        if not file_data:
+            return error_response('Please upload a CSV file or provide csv_content.')
+
+        try:
+            io_string = io.StringIO(file_data)
+            reader = csv.DictReader(io_string)
+
+            created_count = 0
+            updated_count = 0
+            skipped_count = 0
+            errors = []
+
+            for row_idx, row in enumerate(reader, start=2):
+                # Clean headers and values
+                clean_row = {k.strip().lower(): v.strip() for k, v in row.items() if k}
+                
+                email = clean_row.get('email')
+                reg_no = clean_row.get('register_number') or clean_row.get('reg_no') or clean_row.get('roll_no')
+                first_name = clean_row.get('first_name') or clean_row.get('name')
+                last_name = clean_row.get('last_name', '')
+                dept = clean_row.get('department') or clean_row.get('dept', 'General')
+                year_str = clean_row.get('year', '1')
+                hostel = clean_row.get('hostel_block') or clean_row.get('hostel') or clean_row.get('block', 'TBD')
+                room = clean_row.get('room_number') or clean_row.get('room', 'TBD')
+                password = clean_row.get('password') or 'Student@123'
+
+                if not email or not reg_no or not first_name:
+                    errors.append(f'Row {row_idx}: Missing required fields (email, register_number, first_name)')
+                    skipped_count += 1
+                    continue
+
+                try:
+                    year_val = int(year_str) if year_str.isdigit() else 1
+                except ValueError:
+                    year_val = 1
+
+                # Check if user already exists
+                user = User.objects.filter(email=email).first()
+                if not user:
+                    # Check if student with reg_no exists
+                    profile_by_reg = StudentProfile.objects.filter(register_number=reg_no).first()
+                    if profile_by_reg:
+                        user = profile_by_reg.user
+
+                if not user:
+                    user = User.objects.create_user(
+                        email=email,
+                        password=password,
+                        first_name=first_name,
+                        last_name=last_name,
+                        role=UserRole.STUDENT,
+                        is_verified=True,
+                    )
+                    profile = getattr(user, 'student_profile', None)
+                    if not profile:
+                        profile = StudentProfile.objects.create(
+                            user=user,
+                            register_number=reg_no,
+                            department=dept,
+                            year=year_val,
+                            hostel_block=hostel,
+                            room_number=room,
+                        )
+                    else:
+                        profile.register_number = reg_no
+                        profile.department = dept
+                        profile.year = year_val
+                        profile.hostel_block = hostel
+                        profile.room_number = room
+                        profile.save()
+                    created_count += 1
+                else:
+                    # Update existing profile
+                    user.first_name = first_name
+                    if last_name:
+                        user.last_name = last_name
+                    user.save()
+
+                    profile, _ = StudentProfile.objects.get_or_create(user=user, defaults={
+                        'register_number': reg_no,
+                        'department': dept,
+                        'year': year_val,
+                        'hostel_block': hostel,
+                        'room_number': room,
+                    })
+                    profile.register_number = reg_no
+                    profile.department = dept
+                    profile.year = year_val
+                    profile.hostel_block = hostel
+                    profile.room_number = room
+                    profile.save()
+                    updated_count += 1
+
+            AuditLog.objects.create(
+                action='bulk_import_students',
+                performed_by=request.user,
+                target_email=f'Imported {created_count} created, {updated_count} updated',
+            )
+
+            return success_response(
+                data={
+                    'created': created_count,
+                    'updated': updated_count,
+                    'skipped': skipped_count,
+                    'errors': errors,
+                },
+                message=f'Bulk import completed: {created_count} created, {updated_count} updated.',
+            )
+
+        except Exception as e:
+            return error_response(f'Failed to parse CSV file: {str(e)}')
+
+
+class DeletePassedOutStudentsView(APIView):
+    """Delete / archive passed out students (4th year / inactive)."""
+    permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
+
+    def post(self, request):
+        graduates = StudentProfile.objects.filter(year__gte=4)
+        deleted_count = 0
+
+        for student in graduates:
+            email = student.user.email
+            student.user.delete()
+            deleted_count += 1
+
+            AuditLog.objects.create(
+                action='delete_passed_out',
+                performed_by=request.user,
+                target_email=email,
+            )
+
+        return success_response(
+            data={'deleted_count': deleted_count},
+            message=f'Deleted {deleted_count} passed-out student accounts.',
+        )
+
 
 

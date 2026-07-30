@@ -72,6 +72,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         switch (authProvider.userRole) {
           case 'warden':
           case 'admin_warden':
+          case 'admin':
             return const WardenDashboardScreen();
           case 'watchman':
             return const WatchmanDashboardScreen();

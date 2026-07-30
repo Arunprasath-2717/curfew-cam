@@ -150,7 +150,7 @@ class OnboardingTwoScreen extends StatelessWidget {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setBool('onboardingCompleted', true);
                   if (context.mounted) {
-                    Navigator.pushReplacementNamed(context, '/login');
+                    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -173,7 +173,7 @@ class OnboardingTwoScreen extends StatelessWidget {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setBool('onboardingCompleted', true);
                   if (context.mounted) {
-                    Navigator.pushReplacementNamed(context, '/login');
+                    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
                   }
                 },
                 child: Text(

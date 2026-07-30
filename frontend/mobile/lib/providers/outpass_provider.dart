@@ -104,8 +104,9 @@ class OutpassProvider extends ChangeNotifier {
       final actualScanType = data['scan_type']?.toString() ?? scanType ?? 'EXIT';
       return {
         'status': actualScanType == 'EXIT' ? 'EXIT_SUCCESS' : 'RETURN_SUCCESS',
-        'outpassId': data['outpass']?.toString() ?? '',
+        'outpassId': data['outpass_id']?.toString() ?? '',
         'studentName': data['student_name'] ?? 'Student',
+        'scanData': data,
       };
     }
 

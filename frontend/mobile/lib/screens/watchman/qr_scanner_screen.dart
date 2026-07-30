@@ -93,11 +93,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     switch (status) {
       case 'EXIT_SUCCESS':
         setState(() => _lastConsumedPayload = payload);
-        Navigator.pushReplacementNamed(context, '/scan-exit');
+        Navigator.pushReplacementNamed(context, '/scan-exit', arguments: result['scanData']);
         break;
       case 'RETURN_SUCCESS':
         setState(() => _lastConsumedPayload = payload);
-        Navigator.pushReplacementNamed(context, '/scan-return');
+        Navigator.pushReplacementNamed(context, '/scan-return', arguments: result['scanData']);
         break;
       case 'INVALID':
         Navigator.pushReplacementNamed(context, '/scan-invalid');

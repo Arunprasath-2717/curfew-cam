@@ -31,6 +31,7 @@ api_v1_patterns = [
     path('cameras/', include('apps.camera.urls')),
     path('detection/', include('apps.detection.urls')),
     path('notifications/', include('apps.notifications.urls')),
+    path('complaints/', include('apps.complaints.urls')),
 ]
 
 urlpatterns = [

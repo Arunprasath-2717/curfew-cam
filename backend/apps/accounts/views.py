@@ -100,7 +100,8 @@ class LoginView(APIView):
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
                 
-            if user.role != role and not (role == 'warden' and user.role == 'admin_warden'):
+            is_warden_match = role in ('warden', 'admin_warden') and user.role in ('warden', 'admin_warden')
+            if user.role != role and not is_warden_match:
                 return Response(
                     {'success': False, 'error': 'Invalid credentials'},
                     status=status.HTTP_401_UNAUTHORIZED,

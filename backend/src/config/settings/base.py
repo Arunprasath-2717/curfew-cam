@@ -46,6 +46,7 @@ LOCAL_APPS = [
     'apps.camera',
     'apps.detection',
     'apps.notifications',
+    'apps.complaints',
     'apps.common',
 ]
 

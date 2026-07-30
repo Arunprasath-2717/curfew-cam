@@ -92,8 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppColors.navy : AppColors.white;
+    const bgColor = AppColors.white;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -101,7 +100,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: isDark ? AppColors.white : AppColors.navy),
+          icon: const Icon(Icons.arrow_back, color: AppColors.navy),
           onPressed: () => Navigator.pop(context),
         ),
       ),

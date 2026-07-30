@@ -46,13 +46,13 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleLogin([String? overrideRole]) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
-      final String requestedRole = _selectedTabIndex == 0 ? 'student' : (_selectedTabIndex == 1 ? 'warden' : 'watchman');
+      final String requestedRole = overrideRole ?? (_selectedTabIndex == 0 ? 'student' : (_selectedTabIndex == 1 ? 'warden' : 'watchman'));
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final res = await authProvider.login(_emailController.text, _passwordController.text, requestedRole);
       
@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.remove('ag_remembered_email');
         }
         if (mounted) {
-          Navigator.pushReplacementNamed(context, authProvider.dashboardRoute);
+          Navigator.pushNamedAndRemoveUntil(context, authProvider.dashboardRoute, (route) => false);
         }
       } else {
         setState(() => _errorMessage = res['message']);
@@ -78,11 +78,15 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleFastLogin(String email, String role) async {
+    _emailController.text = email;
+    _passwordController.text = 'Password123';
+    await _handleLogin(role);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Theme colors
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppColors.navy : AppColors.white;
+    const bgColor = AppColors.white;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -239,6 +243,38 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           Expanded(child: Divider(color: AppColors.inputBorder, thickness: 1)),
                         ],
+                      ),
+                      const SizedBox(height: 24),
+                      Center(child: Text('FAST LOGIN (TESTING)', style: AppTextStyles.badgeCaps.copyWith(color: Theme.of(context).primaryColor))),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
+                              onPressed: () => _handleFastLogin('student1@test.com', 'student'),
+                              child: const Text('Student 1'),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
+                              onPressed: () => _handleFastLogin('warden1@test.com', 'warden'),
+                              child: const Text('Warden 1'),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
+                              onPressed: () => _handleFastLogin('9998887770', 'watchman'),
+                              child: const Text('Watchman 1'),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
+                              onPressed: () => _handleFastLogin('admin@test.com', 'admin_warden'),
+                              child: const Text('Admin Warden'),
+                            ),
+                          ],
+                        ),
                       ),
                       const Spacer(),
 

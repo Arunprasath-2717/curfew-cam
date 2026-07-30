@@ -35,24 +35,31 @@ class NotificationDispatcher:
                 f"(Celery/Redis unavailable): {e}"
             )
 
-        # Email dispatch via Celery
+        # Email dispatch
         if notification.notification_type in [
             Notification.NotificationType.EMAIL,
             Notification.NotificationType.OUTPASS_STATUS,
         ]:
             try:
                 from .tasks import send_notification_email_async
-                send_notification_email_async.delay(notification.id)
+                try:
+                    send_notification_email_async.delay(notification.id)
+                except Exception:
+                    send_notification_email_async(notification.id)
             except Exception as e:
                 logger.warning(
                     f"Email dispatch skipped for notification {notification.id}: {e}"
                 )
 
-        # FCM dispatch via Celery
+        # FCM dispatch
         try:
             from .tasks import send_fcm_notification_async
-            send_fcm_notification_async.delay(notification.id)
+            try:
+                send_fcm_notification_async.delay(notification.id)
+            except Exception:
+                send_fcm_notification_async(notification.id)
         except Exception as e:
             logger.warning(
                 f"FCM dispatch skipped for notification {notification.id}: {e}"
             )
+

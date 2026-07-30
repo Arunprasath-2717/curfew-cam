@@ -34,6 +34,11 @@ class _NotificationsWardenScreenState extends State<NotificationsWardenScreen> {
     }
   }
 
+  Future<void> _markAllRead() async {
+    await context.read<OutpassProvider>().markAllNotificationsRead();
+    _fetchData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,21 +46,12 @@ class _NotificationsWardenScreenState extends State<NotificationsWardenScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-        title: Text('CurfewCam', style: TextStyle(fontWeight: FontWeight.w600)),
-        leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(icon: Icon(Icons.notifications), onPressed: () {}),
-              Positioned(top: 12, right: 12, child: Container(width: 10, height: 10, decoration: BoxDecoration(color: Theme.of(context).colorScheme.error, shape: BoxShape.circle, border: Border.all(color: Theme.of(context).primaryColor, width: 2)))),
-            ],
-          ),
-        ],
+        title: const Text('CurfewCam', style: TextStyle(fontWeight: FontWeight.w600)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -70,40 +66,49 @@ class _NotificationsWardenScreenState extends State<NotificationsWardenScreen> {
                       Text('Stay updated on hostel activities', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
                     ],
                   ),
-                  TextButton(onPressed: () {}, child: Text('MARK ALL READ', style: AppTextStyles.badgeCaps.copyWith(color: Theme.of(context).primaryColor))),
+                  TextButton(onPressed: _markAllRead, child: Text('MARK ALL READ', style: AppTextStyles.badgeCaps.copyWith(color: Theme.of(context).primaryColor))),
                 ],
               ),
               const SizedBox(height: 24),
-              const SizedBox(height: 24),
               
               if (_isLoading)
-                Center(child: CircularProgressIndicator())
+                const Center(child: CircularProgressIndicator())
               else if (_notifications.isEmpty)
                 Center(
                   child: Column(
                     children: [
-                      Icon(Icons.notifications_off, size: 64, color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey).withOpacity(0.5)),
+                      Icon(Icons.notifications_off, size: 64, color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey).withValues(alpha: 0.5)),
                       const SizedBox(height: 16),
-                      Text('No more notifications', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
+                      Text('No notifications', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
                     ],
                   ),
                 )
               else
                 ListView.builder(
                   shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: _notifications.length,
                   itemBuilder: (context, index) {
                     final item = _notifications[index];
+                    final relatedOutpass = item['related_outpass'];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _buildNotificationItem(context, 
-                        'UPDATE', 
-                        item['created_at'] ?? 'Just now', 
-                        Theme.of(context).primaryColor, 
-                        Icons.info,
-                        item['title'] ?? 'Notification', 
-                        item['message'] ?? '',
+                      child: InkWell(
+                        onTap: () {
+                          if (relatedOutpass != null) {
+                            Navigator.pushNamed(context, '/request-detail', arguments: relatedOutpass.toString());
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildNotificationItem(context, 
+                          (item['category'] ?? 'UPDATE').toString().toUpperCase(), 
+                          item['created_at'] != null ? item['created_at'].toString().split('T')[0] : 'Just now', 
+                          Theme.of(context).primaryColor, 
+                          Icons.info,
+                          item['title'] ?? 'Notification', 
+                          item['message'] ?? '',
+                          showArrow: relatedOutpass != null,
+                        ),
                       ),
                     );
                   },

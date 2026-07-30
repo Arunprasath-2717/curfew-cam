@@ -184,9 +184,11 @@ class _AppDrawerState extends State<AppDrawer> {
 
     // Settings links based on role
     if (widget.currentRole == 'student') {
+      items.add(_buildNavItem(context, Icons.report_problem_outlined, 'Complaint Box', '/student-complaints'));
       items.add(_buildNavItem(context, Icons.security, 'Security Settings', '/settings'));
       items.add(_buildNavItem(context, Icons.help_outline, 'Help & FAQ', '/help-faq'));
     } else if (widget.currentRole == 'warden' || widget.currentRole == 'admin_warden') {
+      items.add(_buildNavItem(context, Icons.assignment_outlined, 'Student Complaints', '/warden-complaints'));
       if (widget.currentRole == 'admin_warden') {
         items.add(_buildNavItem(context, Icons.admin_panel_settings, 'Manage Wardens', '/manage-wardens'));
       }

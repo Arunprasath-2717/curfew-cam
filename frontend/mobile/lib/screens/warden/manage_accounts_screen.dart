@@ -170,59 +170,205 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> with Single
     );
   }
 
-  Widget _buildList(List<dynamic> items, bool isStudent) {
-    if (items.isEmpty) {
-      return Center(child: Text('No records found', style: AppTextStyles.bodySecondary));
+  Future<void> _showBulkImportDialog() async {
+    final controller = TextEditingController(
+      text: 'email,first_name,last_name,register_number,department,year,hostel_block,room_number\n'
+            'john@example.com,John,Doe,2024CS01,CSE,1,BH1,101\n'
+            'jane@example.com,Jane,Smith,2024CS02,CSE,1,BH1,102',
+    );
+
+    final res = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Bulk Import CSV'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Paste CSV data (email, first_name, last_name, register_number, department, year, hostel_block, room_number):', style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLines: 8,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Import CSV'),
+          ),
+        ],
+      ),
+    );
+
+    if (res == true && controller.text.trim().isNotEmpty) {
+      setState(() => _loading = true);
+      final importRes = await WardenService.bulkImportStudents(controller.text.trim());
+      if (importRes['success'] == true) {
+        _loadData();
+        if (mounted) {
+          final data = importRes['data'] ?? {};
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Import complete: ${data['created']} created, ${data['updated']} updated')),
+          );
+        }
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(importRes['message'] ?? 'Import failed')));
+        setState(() => _loading = false);
+      }
     }
+  }
+
+  Future<void> _runPromotion() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Yearly Promotion'),
+        content: const Text('This will increment the year for 1st, 2nd, and 3rd year students. Proceed?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Promote All')),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _loading = true);
+      final res = await WardenService.runPromotion();
+      if (res['success'] == true) {
+        _loadData();
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yearly promotion completed successfully')));
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Error')));
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _deletePassedOutStudents() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Passed Out Students'),
+        content: const Text('This will permanently delete all 4th year / graduated student accounts. Proceed?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete 4th Years', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _loading = true);
+      final res = await WardenService.deletePassedOutStudents();
+      if (res['success'] == true) {
+        _loadData();
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passed-out student accounts deleted')));
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Error')));
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Widget _buildList(List<dynamic> items, bool isStudent) {
     return RefreshIndicator(
       onRefresh: _loadData,
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final user = item['user'] ?? {};
-          final name = user['first_name'] != null ? '${user['first_name']} ${user['last_name'] ?? ''}'.trim() : 'Unknown';
-          final email = user['email'] ?? '';
-          
-          final subtitle = isStudent 
-              ? '${item['register_number']} | ${item['department']}' 
-              : '${item['employee_id']} | ${item['hostel_name']}';
-
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Theme.of(context).dividerColor),
+        children: [
+          if (isStudent) ...[
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _showBulkImportDialog,
+                    icon: const Icon(Icons.upload_file, size: 16),
+                    label: const Text('CSV Bulk Import'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accentBlue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: _runPromotion,
+                    icon: const Icon(Icons.school, size: 16),
+                    label: const Text('Yearly Promotion'),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: _deletePassedOutStudents,
+                    icon: const Icon(Icons.delete_sweep, size: 16, color: AppColors.error),
+                    label: const Text('Delete 4th Yrs', style: TextStyle(color: AppColors.error)),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: AppColors.surfaceElevated,
-                  child: Text(name.isNotEmpty ? name[0] : 'U', style: const TextStyle(color: AppColors.navy)),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 16),
+          ],
+          if (items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 48),
+              child: Center(child: Text('No records found', style: AppTextStyles.bodySecondary)),
+            )
+          else
+            ...List.generate(items.length, (index) {
+              final item = items[index];
+              final user = item['user'] ?? {};
+              final name = user['first_name'] != null ? '${user['first_name']} ${user['last_name'] ?? ''}'.trim() : 'Unknown';
+              final email = user['email'] ?? '';
+              
+              final subtitle = isStudent 
+                  ? '${item['register_number']} | Year ${item['year'] ?? 1} | ${item['department']}' 
+                  : '${item['employee_id']} | ${item['hostel_name']}';
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                  ),
+                  child: Row(
                     children: [
-                      Text(name, style: AppTextStyles.bodyMain.copyWith(fontWeight: FontWeight.bold)),
-                      Text(email, style: AppTextStyles.bodySecondary.copyWith(fontSize: 12)),
-                      const SizedBox(height: 4),
-                      Text(subtitle, style: AppTextStyles.bodySecondary.copyWith(fontSize: 12, color: AppColors.accentBlue)),
+                      CircleAvatar(
+                        backgroundColor: AppColors.surfaceElevated,
+                        child: Text(name.isNotEmpty ? name[0] : 'U', style: const TextStyle(color: AppColors.navy)),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name, style: AppTextStyles.bodyMain.copyWith(fontWeight: FontWeight.bold)),
+                            Text(email, style: AppTextStyles.bodySecondary.copyWith(fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text(subtitle, style: AppTextStyles.bodySecondary.copyWith(fontSize: 12, color: AppColors.accentBlue)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                        onPressed: () => isStudent ? _deleteStudent(item['id']) : _deleteWarden(item['id']),
+                      )
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                  onPressed: () => isStudent ? _deleteStudent(item['id']) : _deleteWarden(item['id']),
-                )
-              ],
-            ),
-          );
-        },
+              );
+            }),
+        ],
       ),
     );
   }

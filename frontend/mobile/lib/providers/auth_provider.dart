@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'api_client.dart';
 import '../services/push_notification_service.dart';
+import '../services/live_alert_service.dart';
 
 enum AuthStatus { initial, authenticated, unauthenticated }
 
@@ -41,12 +42,14 @@ class AuthProvider extends ChangeNotifier {
       _userRole = _userData?['role'] as String?;
       _status = AuthStatus.authenticated;
       
-      // Register FCM token for the existing session
+      // Register FCM token for the existing session & start live alert polling
       PushNotificationService().registerDeviceToken();
+      LiveAlertService.startPolling();
     } else {
       // Token is invalid and refresh also failed (ApiClient handles that).
       await AuthService.clearTokens();
       _status = AuthStatus.unauthenticated;
+      LiveAlertService.stopPolling();
     }
     notifyListeners();
   }
@@ -67,8 +70,9 @@ class AuthProvider extends ChangeNotifier {
 
       _status = AuthStatus.authenticated;
       
-      // Register FCM token for new login
+      // Register FCM token for new login & start live alert polling
       PushNotificationService().registerDeviceToken();
+      LiveAlertService.startPolling();
       
       notifyListeners();
     }
@@ -124,6 +128,7 @@ class AuthProvider extends ChangeNotifier {
   /// Logout — clear tokens and reset state.
   Future<void> logout() async {
     await AuthService.logout();
+    LiveAlertService.stopPolling();
     _status = AuthStatus.unauthenticated;
     _userRole = null;
     _userData = null;
@@ -135,6 +140,7 @@ class AuthProvider extends ChangeNotifier {
     switch (_userRole) {
       case 'warden':
       case 'admin_warden':
+      case 'admin':
         return '/warden-dashboard';
       case 'watchman':
         return '/watchman-dashboard';

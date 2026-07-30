@@ -7,17 +7,29 @@ class ScanExitScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : {};
+
+    final studentName = data['student_name'] ?? 'Student';
+    final regNo = data['register_number'] ?? 'N/A';
+    final roomNo = data['room_number'] ?? 'N/A';
+    final destination = data['destination'] ?? 'N/A';
+    final approvedBy = data['approved_by_name'] ?? 'Warden';
+    final expDate = data['expected_return_date'] ?? '';
+    final expTime = data['expected_return_time'] ?? '';
+    final gate = data['gate'] ?? 'GATE 01';
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(backgroundColor: Color(0xFF22C55E), foregroundColor: Theme.of(context).scaffoldBackgroundColor, title: Text('EXIT VERIFIED ✓', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2))),
+      appBar: AppBar(backgroundColor: const Color(0xFF22C55E), foregroundColor: Theme.of(context).scaffoldBackgroundColor, title: const Text('EXIT VERIFIED ✓', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2))),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               const SizedBox(height: 24),
               // Success Animation
-              Container(width: 96, height: 96, decoration: BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle, border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 4), boxShadow: [BoxShadow(color: Color(0xFF22C55E).withValues(alpha: 0.3), blurRadius: 24, spreadRadius: 8)]), child: Icon(Icons.check_circle, color: Theme.of(context).scaffoldBackgroundColor, size: 56)),
+              Container(width: 96, height: 96, decoration: BoxDecoration(color: const Color(0xFF22C55E), shape: BoxShape.circle, border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 4), boxShadow: [BoxShadow(color: const Color(0xFF22C55E).withValues(alpha: 0.3), blurRadius: 24, spreadRadius: 8)]), child: Icon(Icons.check_circle, color: Theme.of(context).scaffoldBackgroundColor, size: 56)),
               const SizedBox(height: 8),
               Text('ACCESS GRANTED', style: AppTextStyles.badgeCaps.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey), letterSpacing: 2)),
               const SizedBox(height: 24),
@@ -27,48 +39,53 @@ class ScanExitScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
                       child: Row(
                         children: [
-                          Container(width: 80, height: 80, decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor), image: DecorationImage(image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuDI-Izdx815xsFrc5buCJJGuWurCffns951DXsqvKWk2-dSs9FvQbOvatj0bKpCavMKI8_VRbiYq_qUzhYueFuVUiva42O64Udt4we7A5bKEjfWk1kD65gGX_VNIKms54Da6nopJ6fWm7cs6_d8h0Xy2c-eq76X0saEJlbRvrRO-lCupwGCmJtfzHDphDr5zLMhETiVZR8hPlWPZMM38hoTjujIRfIvLCxxgxZqNj6Ip4UdPE9IhZvQ0aS-v6lWdTTWVAIkeGdOE50'), fit: BoxFit.cover))),
+                          CircleAvatar(
+                            radius: 36,
+                            backgroundColor: AppColors.accentBlue.withValues(alpha: 0.15),
+                            child: Text(
+                              studentName.isNotEmpty ? studentName[0] : 'S',
+                              style: TextStyle(color: AppColors.accentBlue, fontSize: 28, fontWeight: FontWeight.bold),
+                            ),
+                          ),
                           const SizedBox(width: 16),
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text('Arun Kumar', style: AppTextStyles.cardTitle.copyWith(color: Theme.of(context).primaryColor)),
-                            Text('20CS101 • Room B-402', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
+                            Text(studentName, style: AppTextStyles.cardTitle.copyWith(color: Theme.of(context).primaryColor)),
+                            Text('$regNo • Room $roomNo', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
                             const SizedBox(height: 8),
-                            Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: const Color(0xFF22C55E).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(9999)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.verified_user, size: 14, color: const Color(0xFF22C55E)), const SizedBox(width: 4), Text('ACTIVE STATUS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF22C55E)))])),
+                            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: const Color(0xFF22C55E).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(9999)), child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.verified_user, size: 14, color: Color(0xFF22C55E)), SizedBox(width: 4), Text('EXIT GRANTED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF22C55E)))])),
                           ])),
                         ],
                       ),
                     ),
                     Divider(height: 1, color: Theme.of(context).dividerColor),
                     Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         children: [
-                          _buildDetailRow(context, Icons.location_on, 'Destination', 'City Mall'),
+                          _buildDetailRow(context, Icons.location_on, 'Destination', destination),
                           const SizedBox(height: 16),
-                          _buildDetailRow(context, Icons.assignment_ind, 'Approved by', 'Warden Block A'),
+                          _buildDetailRow(context, Icons.assignment_ind, 'Approved by', approvedBy),
                           const SizedBox(height: 16),
-                          _buildDetailRow(context, Icons.schedule, 'Expected Return', '09:00 PM Today', valueColor: const Color(0xFF22C55E)),
+                          _buildDetailRow(context, Icons.schedule, 'Expected Return', '$expDate $expTime'.trim(), valueColor: const Color(0xFF22C55E)),
                         ],
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(color: Theme.of(context).dividerColor.withValues(alpha: 0.5), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(color: Theme.of(context).dividerColor.withValues(alpha: 0.5), borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
                       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text('GATE 02 • OUTPASS #4920', style: AppTextStyles.badgeCaps.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
-                        Text('Scan at 04:32 PM', style: AppTextStyles.badgeCaps.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
+                        Text('$gate • SCAN VERIFIED', style: AppTextStyles.badgeCaps.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
+                        Text('Just now', style: AppTextStyles.badgeCaps.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey))),
                       ]),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              ElevatedButton.icon(onPressed: () => Navigator.pop(context), icon: Icon(Icons.task_alt), label: Text('Confirm Exit'), style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 48), backgroundColor: Theme.of(context).primaryColor, foregroundColor: Theme.of(context).scaffoldBackgroundColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
-              const SizedBox(height: 12),
-              Text('System Log: Verification Token #7721-BC', style: AppTextStyles.bodySecondary.copyWith(color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey).withValues(alpha: 0.6))),
+              ElevatedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.task_alt), label: const Text('Confirm Exit'), style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48), backgroundColor: Theme.of(context).primaryColor, foregroundColor: Theme.of(context).scaffoldBackgroundColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
             ],
           ),
         ),

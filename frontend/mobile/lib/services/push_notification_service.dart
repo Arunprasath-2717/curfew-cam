@@ -88,10 +88,7 @@ class PushNotificationService {
       debugPrint('Got a message whilst in the foreground!');
       debugPrint('Message data: ${message.data}');
 
-      if (message.notification != null) {
-        debugPrint('Message also contained a notification: ${message.notification}');
-        _showLocalNotification(message);
-      }
+      _showLocalNotification(message);
     });
 
     // 4. Background handler
@@ -100,33 +97,49 @@ class PushNotificationService {
     _isInitialized = true;
   }
 
-  void _showLocalNotification(RemoteMessage message) {
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
+  void showSystemNotification({
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) {
+    if (title.isEmpty && body.isEmpty) return;
 
-    if (notification != null && android != null) {
-      _localNotificationsPlugin.show(
-        id: notification.hashCode,
-        title: notification.title,
-        body: notification.body,
-        notificationDetails: NotificationDetails(
-          android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            channelDescription: 'This channel is used for important notifications.',
-            importance: Importance.max,
-            priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+    final int notificationId = (title.hashCode + DateTime.now().millisecondsSinceEpoch).abs() % 100000;
+    _localNotificationsPlugin.show(
+      id: notificationId,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          channelDescription: 'This channel is used for important system alerts and notifications.',
+          importance: Importance.max,
+          priority: Priority.max,
+          icon: '@mipmap/ic_launcher',
+          playSound: true,
+          enableVibration: true,
+          showWhen: true,
         ),
-        payload: jsonEncode(message.data),
-      );
-    }
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: data != null ? jsonEncode(data) : null,
+    );
+  }
+
+  void _showLocalNotification(RemoteMessage message) {
+    final title = message.notification?.title ?? message.data['title'] ?? 'Alert';
+    final body = message.notification?.body ?? message.data['message'] ?? message.data['body'] ?? '';
+
+    showSystemNotification(
+      title: title,
+      body: body,
+      data: message.data,
+    );
   }
 
   /// Get the token and send it to our backend

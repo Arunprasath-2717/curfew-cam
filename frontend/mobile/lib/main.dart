@@ -10,6 +10,8 @@ import 'firebase_options.dart';
 import 'widgets/auth_wrapper.dart';
 import 'services/push_notification_service.dart';
 
+import 'services/live_alert_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -39,10 +41,11 @@ class MyApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
+          navigatorKey: LiveAlertService.navigatorKey,
           title: 'CurfewCam',
           theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: themeProvider.themeMode,
+          darkTheme: AppTheme.lightTheme,
+          themeMode: ThemeMode.light,
           // AuthWrapper is the home widget — it handles splash/login/dashboard.
           home: const AuthWrapper(),
           routes: AppRouter.routes,

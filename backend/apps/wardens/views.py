@@ -182,14 +182,15 @@ class LateStudentsView(generics.ListAPIView):
         Outpass.mark_overdue_outpasses()
 
         qs = Outpass.objects.filter(
-            status=Outpass.Status.ACTIVE,
-            return_time__lt=timezone.now()
+            status=Outpass.Status.ACTIVE
         ).select_related('student__user', 'approved_by__user').order_by('-created_at')
         warden_profile = getattr(self.request.user, 'warden_profile', None)
         if warden_profile and not warden_profile.is_chief_warden and self.request.user.role != UserRole.ADMIN_WARDEN:
             if warden_profile.hostel_name:
                 qs = qs.filter(student__hostel_block=warden_profile.hostel_name)
-        return qs
+            if warden_profile.assigned_year:
+                qs = qs.filter(student__year=warden_profile.assigned_year)
+        return [op for op in qs if op.is_late]
 
 
 from rest_framework import serializers

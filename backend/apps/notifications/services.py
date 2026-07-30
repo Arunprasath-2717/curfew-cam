@@ -8,18 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 def notify_admins_of_alert(alert):
-    """Notify all admins of a critical system alert."""
+    """Notify all admins and wardens of a critical system/security alert."""
     from apps.accounts.models import User, UserRole
-    admins = User.objects.filter(role=UserRole.ADMIN, is_active=True)
+    recipients = User.objects.filter(role__in=[UserRole.ADMIN, UserRole.WARDEN, UserRole.ADMIN_WARDEN], is_active=True)
     
-    for admin in admins:
+    for user in recipients:
         NotificationService.create(
-            user=admin,
-            title=f"SYSTEM ALERT: {alert.title}",
+            user=user,
+            title=f"ALERT: {alert.title}",
             message=alert.message,
             event_name="SYSTEM_ALERT_CREATED",
-            category=Notification.NotificationCategory.SYSTEM,
-            priority=Notification.NotificationPriority.CRITICAL,
+            category=Notification.NotificationCategory.SECURITY,
+            priority=Notification.NotificationPriority.CRITICAL if alert.level == 'CRITICAL' else Notification.NotificationPriority.HIGH,
             notification_type=Notification.NotificationType.SYSTEM_ALERT
         )
 

@@ -16,6 +16,8 @@ urlpatterns = [
 
     # Management
     path('manage/students/', management_views.ManageStudentsView.as_view(), name='manage-students'),
+    path('manage/students/bulk-import/', management_views.BulkImportStudentsView.as_view(), name='manage-students-bulk-import'),
+    path('manage/students/delete-passed-out/', management_views.DeletePassedOutStudentsView.as_view(), name='manage-students-delete-passed-out'),
     path('manage/students/<uuid:pk>/', management_views.ManageStudentDetailView.as_view(), name='manage-student-detail'),
     path('manage/wardens/', management_views.ManageWardensView.as_view(), name='manage-wardens'),
     path('manage/wardens/<uuid:pk>/', management_views.ManageWardenDetailView.as_view(), name='manage-warden-detail'),

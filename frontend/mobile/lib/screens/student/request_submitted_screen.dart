@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../theme/app_text_styles.dart';
 
 class RequestSubmittedScreen extends StatefulWidget {
@@ -21,7 +23,13 @@ class _RequestSubmittedScreenState extends State<RequestSubmittedScreen> with Si
     _controller.forward();
     
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+      if (mounted) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          authProvider.dashboardRoute,
+          (route) => false,
+        );
+      }
     });
   }
 

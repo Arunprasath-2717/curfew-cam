@@ -134,8 +134,7 @@ class _WardenSettingsScreenState extends State<WardenSettingsScreen> {
                 child: Column(
                   children: [
                     _buildSwitchItem(context, Icons.notifications_active, 'Push Notifications', 'Alerts for pending requests', _pushNotifications, _togglePushNotifications),
-                    Divider(height: 1, color: Theme.of(context).dividerColor),
-                    _buildSwitchItem(context, Icons.dark_mode, 'Dark Mode', 'Switch app appearance', context.watch<ThemeProvider>().themeMode == ThemeMode.dark, (v) => context.read<ThemeProvider>().setThemeMode(v ? ThemeMode.dark : ThemeMode.light)),
+                    _buildNavItem(context, Icons.light_mode, 'Appearance', 'Light Mode (Default)'),
                     Divider(height: 1, color: Theme.of(context).dividerColor),
                     _buildNavItem(context, Icons.apartment, 'Hostel Details', 'Block A, Rooms 101-500'),
                     Divider(height: 1, color: Theme.of(context).dividerColor),

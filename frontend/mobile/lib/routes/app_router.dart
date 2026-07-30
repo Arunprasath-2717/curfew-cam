@@ -24,6 +24,7 @@ import '../screens/student/late_warning_screen.dart';
 import '../screens/student/pass_rejected_screen.dart';
 import '../screens/student/pass_expired_screen.dart';
 import '../screens/student/help_faq_screen.dart';
+import '../screens/student/complaint_box_screen.dart';
 
 import '../screens/warden/analytics_overview_screen.dart';
 import '../screens/warden/approve_confirmation_screen.dart';
@@ -48,6 +49,7 @@ import '../screens/warden/warden_settings_screen.dart';
 import '../screens/warden/warden_detection_screen.dart';
 import '../screens/warden/manage_accounts_screen.dart';
 import '../screens/warden/manage_wardens_screen.dart';
+import '../screens/warden/warden_complaint_list_screen.dart';
 
 import '../screens/watchman/watchman_dashboard_screen.dart';
 import '../screens/watchman/qr_scanner_screen.dart';
@@ -92,6 +94,7 @@ class AppRouter {
   static const String passRejected = '/pass-rejected';
   static const String passExpired = '/pass-expired';
   static const String helpFaq = '/help-faq';
+  static const String studentComplaints = '/student-complaints';
   
   static const String wardenDashboard = '/warden-dashboard';
   static const String pendingRequests = '/pending-requests';
@@ -116,6 +119,7 @@ class AppRouter {
   static const String wardenDetections = '/warden-detections';
   static const String manageAccounts = '/manage-accounts';
   static const String manageWardens = '/manage-wardens';
+  static const String wardenComplaints = '/warden-complaints';
   
   static const String watchmanDashboard = '/watchman-dashboard';
   static const String qrScanner = '/qr-scanner';
@@ -163,6 +167,7 @@ class AppRouter {
         passRejected: (context) => const PassRejectedScreen(),
         passExpired: (context) => const PassExpiredScreen(),
         helpFaq: (context) => const HelpFaqScreen(),
+        studentComplaints: (context) => const ComplaintBoxScreen(),
         
         wardenDashboard: (context) => const WardenDashboardScreen(),
         pendingRequests: (context) => const PendingRequestsScreen(),
@@ -187,6 +192,7 @@ class AppRouter {
         wardenDetections: (context) => const WardenDetectionScreen(),
         manageAccounts: (context) => const ManageAccountsScreen(),
         manageWardens: (context) => const ManageWardensScreen(),
+        wardenComplaints: (context) => const WardenComplaintListScreen(),
         
         watchmanDashboard: (context) => const WatchmanDashboardScreen(),
         qrScanner: (context) => const QrScannerScreen(),

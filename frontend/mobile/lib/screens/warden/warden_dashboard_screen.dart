@@ -277,12 +277,19 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
           children: [
             Expanded(child: _buildActionBtn('Manage Accounts', Icons.manage_accounts_rounded, AppColors.accentBlue, () => Navigator.pushNamed(context, '/manage-accounts'))),
             const SizedBox(width: 8),
-            if (_userRole == 'admin_warden')
-              Expanded(child: _buildActionBtn('Manage Wardens', Icons.admin_panel_settings_rounded, AppColors.error, () => Navigator.pushNamed(context, '/manage-wardens')))
-            else
-              const Expanded(child: SizedBox()), // Empty space for symmetry
+            Expanded(child: _buildActionBtn('Logged Complaints', Icons.report_problem_rounded, AppColors.amber, () => Navigator.pushNamed(context, '/warden-complaints'))),
           ],
         ),
+        if (_userRole == 'admin_warden') ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: _buildActionBtn('Manage Wardens', Icons.admin_panel_settings_rounded, AppColors.error, () => Navigator.pushNamed(context, '/manage-wardens'))),
+              const SizedBox(width: 8),
+              const Expanded(child: SizedBox()),
+            ],
+          ),
+        ],
       ],
     );
   }

@@ -69,10 +69,26 @@ class _ActiveQrScreenState extends State<ActiveQrScreen> {
   }
 
   String _getTokenExpiryText() {
-    if (_token == null) return '';
-    final diff = _token!.expiresAt.difference(DateTime.now());
-    if (diff.isNegative) return 'QR Expired - Pull to refresh';
-    return 'QR refreshes in ${diff.inMinutes.toString().padLeft(2, '0')}:${(diff.inSeconds % 60).toString().padLeft(2, '0')}';
+    if (_outpass == null || _outpass!['expected_return_date'] == null) return '';
+    final dateStr = _outpass!['expected_return_date'];
+    final timeStr = _outpass!['expected_return_time'];
+    final returnTime = DateTime.tryParse('$dateStr $timeStr');
+    if (returnTime == null) return '';
+    
+    final diff = returnTime.difference(DateTime.now());
+    if (diff.isNegative) {
+      return 'Time Expired - Overdue';
+    }
+    
+    final hours = diff.inHours.toString().padLeft(2, '0');
+    final minutes = (diff.inMinutes.remainder(60)).toString().padLeft(2, '0');
+    final seconds = (diff.inSeconds.remainder(60)).toString().padLeft(2, '0');
+    
+    if (_outpass!['status'] == 'APPROVED') {
+      return 'Exit allowed. Return time: $timeStr';
+    }
+    
+    return 'Time remaining: $hours:$minutes:$seconds';
   }
 
   String _getOverdueText() {

@@ -25,14 +25,10 @@ class SettingsScreen extends StatelessWidget {
           _SettingsCard(
             children: [
               _SettingsTile(
-                icon: Icons.dark_mode_rounded,
-                iconColor: AppColors.accentIndigo,
-                title: 'Dark Mode',
-                trailing: Switch.adaptive(
-                  value: isDark,
-                  activeTrackColor: AppColors.accentIndigo,
-                  onChanged: (_) => themeProvider.toggleTheme(),
-                ),
+                icon: Icons.light_mode_rounded,
+                iconColor: AppColors.amber,
+                title: 'Appearance',
+                trailing: Text('Light Mode (Default)', style: AppTextStyles.bodySecondary.copyWith(fontWeight: FontWeight.bold)),
               ),
             ],
           ),

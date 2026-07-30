@@ -27,7 +27,11 @@ class ApiClient {
   static dynamic extractData(dynamic body) {
     if (body is Map<String, dynamic>) {
       if (body['success'] == true && body.containsKey('data')) {
-        return body['data'];
+        final data = body['data'];
+        if (data is Map && data.containsKey('results')) {
+          return data['results'];
+        }
+        return data;
       }
       if (body.containsKey('results')) {
         return body['results'];

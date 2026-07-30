@@ -131,6 +131,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
                           _buildStatusCard(),
                           const SizedBox(height: 20),
                           _buildNewOutpassButton(),
+                          const SizedBox(height: 12),
+                          _buildComplaintBoxButton(),
                           const SizedBox(height: 28),
                           Text('Recent Requests', style: AppTextStyles.sectionHeader),
                           const SizedBox(height: 14),
@@ -386,6 +388,49 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
                 const Icon(Icons.add_circle_rounded, color: Colors.white, size: 22),
                 const SizedBox(width: 10),
                 Text('New Outpass Request', style: AppTextStyles.cardTitle.copyWith(color: Colors.white)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComplaintBoxButton() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: AppColors.surfaceElevated,
+        border: Border.all(color: AppColors.amber.withOpacity(0.4)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.pushNamed(context, '/student-complaints'),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.amber.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.report_problem_outlined, color: AppColors.amber, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Hostel Complaint Box', style: AppTextStyles.bodyMain.copyWith(fontWeight: FontWeight.bold)),
+                      const Text('Report maintenance, food, or hostel issues', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
               ],
             ),
           ),
