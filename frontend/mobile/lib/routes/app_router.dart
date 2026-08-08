@@ -50,6 +50,7 @@ import '../screens/warden/warden_detection_screen.dart';
 import '../screens/warden/manage_accounts_screen.dart';
 import '../screens/warden/manage_wardens_screen.dart';
 import '../screens/warden/warden_complaint_list_screen.dart';
+import '../screens/warden/post_announcement_screen.dart';
 
 import '../screens/watchman/watchman_dashboard_screen.dart';
 import '../screens/watchman/qr_scanner_screen.dart';
@@ -137,6 +138,7 @@ class AppRouter {
   static const String offlineMode = '/offline-mode';
   static const String helpWatchman = '/help-watchman';
   static const String gateMonitor = '/gate-monitor';
+  static const String postAnnouncement = '/post-announcement';
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (context) => const SplashScreen(),
@@ -210,5 +212,6 @@ class AppRouter {
         offlineMode: (context) => const OfflineModeNoticeScreen(),
         helpWatchman: (context) => const HelpSupportWatchmanScreen(),
         gateMonitor: (context) => const GateMonitorScreen(),
+        postAnnouncement: (context) => const PostAnnouncementScreen(),
       };
 }

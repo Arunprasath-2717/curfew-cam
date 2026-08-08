@@ -1,6 +1,6 @@
 """Notification serializers."""
 from rest_framework import serializers
-from .models import Notification
+from .models import Notification, Announcement
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -20,3 +20,11 @@ class NotificationMarkReadSerializer(serializers.Serializer):
         child=serializers.UUIDField(),
         allow_empty=False
     )
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    warden_name = serializers.CharField(source='warden.get_full_name', read_only=True)
+
+    class Meta:
+        model = Announcement
+        fields = ('id', 'warden', 'warden_name', 'title', 'message', 'is_active', 'created_at')
+        read_only_fields = ('id', 'warden', 'created_at')

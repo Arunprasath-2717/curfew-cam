@@ -237,3 +237,5 @@ resend
 whitenoise==6.6.0
 dj-database-url==2.1.0
 firebase-admin==6.5.0
+pandas==2.2.0
+openpyxl==3.1.2

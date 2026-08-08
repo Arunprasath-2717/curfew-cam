@@ -59,4 +59,5 @@ htmlcov/
 # -----------------------------
 # Misc
 # -----------------------------
-.idea/firebase-service-account.json
+.idea/
+firebase-service-account.json

@@ -13,9 +13,17 @@ import tempfile
 from apps.camera.models import Camera
 
 
+from django.conf import settings
+
+class IsEdgeDevice(permissions.BasePermission):
+    def has_permission(self, request, view):
+        token = request.headers.get('X-Edge-Token')
+        expected_token = getattr(settings, 'EDGE_DEVICE_TOKEN', 'fallback-edge-secret-123')
+        return bool(token and token == expected_token)
+
 class DetectionWebhookView(APIView):
     """Receive detection results from edge device / YOLO script."""
-    permission_classes = (permissions.IsAuthenticated,) # In production, restrict to specific API user/token for camera/edge node
+    permission_classes = (IsEdgeDevice,)
 
     def post(self, request):
         serializer = DetectionCreateSerializer(data=request.data)
@@ -70,7 +78,7 @@ class AlertAcknowledgeView(APIView):
 
 class DetectionAnalyzeView(APIView):
     """Upload an image to run YOLO inference and record detections."""
-    permission_classes = [] # Explicitly disabled for testing (overrides global default)
+    permission_classes = (IsEdgeDevice,)
 
     def post(self, request):
         if 'image' not in request.FILES:

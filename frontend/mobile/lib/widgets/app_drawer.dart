@@ -195,7 +195,7 @@ class _AppDrawerState extends State<AppDrawer> {
       items.add(_buildNavItem(context, Icons.settings, 'Warden Settings', '/warden-settings'));
     } else if (widget.currentRole == 'watchman') {
       items.add(_buildNavItem(context, Icons.settings, 'Settings', '/watchman-settings'));
-      items.add(_buildNavItem(context, Icons.help_outline, 'Help & Support', '/help-support-watchman'));
+      items.add(_buildNavItem(context, Icons.help_outline, 'Help & Support', '/help-watchman'));
     }
 
     return items;

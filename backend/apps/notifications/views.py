@@ -7,8 +7,8 @@ from django.utils import timezone
 from apps.common.responses import success_response, error_response
 from apps.accounts.permissions import IsAdminOrWarden
 from apps.students.models import StudentProfile
-from .models import Notification
-from .serializers import NotificationSerializer, NotificationMarkReadSerializer
+from .models import Notification, Announcement
+from .serializers import NotificationSerializer, NotificationMarkReadSerializer, AnnouncementSerializer
 
 
 class NotificationListView(generics.ListAPIView):
@@ -71,10 +71,13 @@ class EmergencyNotificationView(APIView):
         if not title or not message:
             return error_response('title and message are required')
 
-        warden_profile = getattr(request.user, 'warden_profile', None)
+        user = request.user
+        warden_profile = getattr(user, 'warden_profile', None)
         students = StudentProfile.objects.select_related('user')
-        if warden_profile:
-            students = students.filter(hostel_block=warden_profile.hostel_name)
+        
+        if getattr(user, 'role', '') != 'admin_warden':
+            if warden_profile and not warden_profile.is_chief_warden:
+                students = students.filter(hostel_block=warden_profile.hostel_name)
 
         from .services import NotificationService
         count = 0
@@ -94,3 +97,30 @@ class EmergencyNotificationView(APIView):
             data={'sent_count': count},
             message=f'Emergency alert sent to {count} students',
         )
+
+class AnnouncementListCreateView(generics.ListCreateAPIView):
+    """List and create announcements."""
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = AnnouncementSerializer
+
+    def get_queryset(self):
+        return Announcement.objects.filter(is_active=True)
+
+    def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied
+        if getattr(self.request.user, 'role', '') not in ['warden', 'admin_warden']:
+            raise PermissionDenied("Only wardens can post announcements.")
+        serializer.save(warden=self.request.user)
+
+
+class AnnouncementDeleteView(generics.DestroyAPIView):
+    """Delete (deactivate) an announcement."""
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = Announcement.objects.all()
+
+    def perform_destroy(self, instance):
+        from rest_framework.exceptions import PermissionDenied
+        if getattr(self.request.user, 'role', '') not in ['warden', 'admin_warden']:
+            raise PermissionDenied("Only wardens can delete announcements.")
+        instance.is_active = False
+        instance.save()

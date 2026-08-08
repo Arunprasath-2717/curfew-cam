@@ -6,6 +6,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/status_chip.dart';
 import '../../providers/outpass_provider.dart';
 import '../../providers/auth_service.dart';
+import '../../services/announcement_service.dart';
 import 'dart:async';
 
 class StudentDashboardScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
   List<dynamic> _recentRequests = [];
   String _studentName = 'Student';
   int _unreadCount = 0;
+  List<dynamic> _announcements = [];
   bool _isLoading = true;
   final _outpassProvider = OutpassProvider();
   late AnimationController _animCtrl;
@@ -66,6 +68,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
       final currentRes = await _outpassProvider.getCurrentOutpass();
       final historyRes = await _outpassProvider.getOutpassHistory();
       final notifsRes = await _outpassProvider.getNotifications();
+      final annRes = await AnnouncementService.getAnnouncements();
       if (!mounted) return;
 
       setState(() {
@@ -75,6 +78,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
         }
         if (notifsRes['success'] == true && notifsRes['data'] is List) {
           _unreadCount = (notifsRes['data'] as List).where((n) => n['is_read'] == false).length;
+        }
+        if (annRes['success'] == true && annRes['data'] is List) {
+          _announcements = annRes['data'];
         }
         _isLoading = false;
       });
@@ -128,6 +134,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
                       padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
+                          if (_announcements.isNotEmpty) _buildAnnouncementBanner(),
                           _buildStatusCard(),
                           const SizedBox(height: 20),
                           _buildNewOutpassButton(),
@@ -247,6 +254,41 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
     } else {
       return 'Returns in ${hours}h ${minutes}m';
     }
+  }
+
+  Widget _buildAnnouncementBanner() {
+    return Column(
+      children: _announcements.map((a) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.accentIndigo.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.accentIndigo.withOpacity(0.4)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.campaign_rounded, color: AppColors.accentIndigo, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(a['title'] ?? 'Notice', style: AppTextStyles.bodyMain.copyWith(fontWeight: FontWeight.bold, color: AppColors.navy)),
+                    const SizedBox(height: 4),
+                    Text(a['message'] ?? '', style: AppTextStyles.bodySecondary.copyWith(color: AppColors.textPrimary)),
+                    const SizedBox(height: 8),
+                    Text('By: ${a['warden_name'] ?? 'Warden'}', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
   }
 
   Widget _buildStatusCard() {

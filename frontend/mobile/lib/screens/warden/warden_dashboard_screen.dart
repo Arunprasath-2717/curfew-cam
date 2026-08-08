@@ -7,6 +7,7 @@ import '../../providers/warden_service.dart';
 import '../../providers/auth_service.dart';
 import '../../providers/outpass_provider.dart';
 import '../../utils/string_utils.dart';
+import '../../services/announcement_service.dart';
 
 class WardenDashboardScreen extends StatefulWidget {
   const WardenDashboardScreen({super.key});
@@ -23,6 +24,8 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
   String _hostelName = 'Hostel';
   String _userRole = 'warden';
   int _unreadCount = 0;
+  List<dynamic> _announcements = [];
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +67,13 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
         }
       });
     }
+
+    try {
+      final ann = await AnnouncementService.getAnnouncements();
+      if (mounted && ann['success'] == true && ann['data'] is List) {
+        setState(() => _announcements = ann['data']);
+      }
+    } catch (_) {}
   }
 
   void _onNavTap(int index) {
@@ -91,7 +101,13 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
                         _buildStatGrid(),
                         const SizedBox(height: 24),
                         _buildQuickActions(),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 24),
+                        if (_announcements.isNotEmpty) ...[
+                          Text('Active Notices', style: AppTextStyles.sectionHeader),
+                          const SizedBox(height: 12),
+                          _buildAnnouncementsList(),
+                          const SizedBox(height: 24),
+                        ],
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -259,7 +275,10 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: _buildActionBtn('Bulk Approve', Icons.checklist_rounded, AppColors.success, () => Navigator.pushNamed(context, '/bulk-approve'))),
+            Expanded(child: _buildActionBtn('Post Notice', Icons.campaign_rounded, AppColors.success, () async {
+              final posted = await Navigator.pushNamed(context, '/post-announcement');
+              if (posted == true) _load();
+            })),
             const SizedBox(width: 8),
             Expanded(child: _buildActionBtn('Security Alerts', Icons.security, AppColors.error, () => Navigator.pushNamed(context, '/warden-detections'))),
           ],
@@ -267,9 +286,9 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _buildActionBtn('Search', Icons.search_rounded, AppColors.accentBlue, () => Navigator.pushNamed(context, '/search-students'))),
+            Expanded(child: _buildActionBtn('Bulk Approve', Icons.checklist_rounded, AppColors.amber, () => Navigator.pushNamed(context, '/bulk-approve'))),
             const SizedBox(width: 8),
-            Expanded(child: _buildActionBtn('Live Monitor', Icons.videocam_rounded, AppColors.amber, () => Navigator.pushNamed(context, '/gate-monitor'))),
+            Expanded(child: _buildActionBtn('Search', Icons.search_rounded, AppColors.accentBlue, () => Navigator.pushNamed(context, '/search-students'))),
           ],
         ),
         const SizedBox(height: 8),
@@ -313,6 +332,48 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAnnouncementsList() {
+    return Column(
+      children: _announcements.map((a) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.accentIndigo.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.accentIndigo.withOpacity(0.3)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.campaign_rounded, color: AppColors.accentIndigo, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(a['title'] ?? 'Notice', style: AppTextStyles.bodyMain.copyWith(fontWeight: FontWeight.bold, color: AppColors.navy)),
+                    const SizedBox(height: 4),
+                    Text(a['message'] ?? '', style: AppTextStyles.bodySecondary.copyWith(color: AppColors.textPrimary)),
+                    const SizedBox(height: 8),
+                    Text(a['warden_name'] ?? 'Warden', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                onPressed: () async {
+                  final res = await AnnouncementService.deleteAnnouncement(a['id']);
+                  if (res['success'] == true) _load();
+                },
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 

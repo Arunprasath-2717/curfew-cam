@@ -9,4 +9,7 @@ urlpatterns = [
     path('mark-read/', views.NotificationMarkReadView.as_view(), name='mark-read'),
     path('mark-all-read/', views.NotificationMarkAllReadView.as_view(), name='mark-all-read'),
     path('emergency/', views.EmergencyNotificationView.as_view(), name='emergency'),
+    
+    path('announcements/', views.AnnouncementListCreateView.as_view(), name='announcements-list-create'),
+    path('announcements/<uuid:pk>/', views.AnnouncementDeleteView.as_view(), name='announcements-delete'),
 ]

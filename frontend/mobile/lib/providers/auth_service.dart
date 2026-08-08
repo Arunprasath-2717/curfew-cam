@@ -15,7 +15,104 @@ class AuthService {
   /// - Android emulator: 10.0.2.2 (maps to host machine's localhost)
   /// - Physical device / iOS simulator / other: localhost
   static String? _overrideBaseUrl;
-  static void setOverrideBaseUrl(String url) => _overrideBaseUrl = url;
+  
+  static Future<void> initServerUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUrl = prefs.getString('custom_server_url');
+    if (savedUrl != null && savedUrl.isNotEmpty) {
+      _overrideBaseUrl = savedUrl;
+      return;
+    }
+
+    // Check if we are running on an Android Emulator and the host is accessible
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final client = http.Client();
+        await client.get(Uri.parse('http://10.0.2.2:8000/')).timeout(const Duration(milliseconds: 500));
+        _overrideBaseUrl = 'http://10.0.2.2:8000/api/v1';
+        debugPrint("Discovered server at: $_overrideBaseUrl (Emulator)");
+        client.close();
+        return;
+      } catch (_) {
+        // Not an emulator or host not reachable
+      }
+    }
+
+    // Try standard hotspot gateway IPs (fixes UDP broadcast drops on real phones)
+    if (!kIsWeb) {
+      final commonHotspotIps = [
+        '10.42.0.1',     // Ubuntu Hotspot
+        '192.168.137.1', // Windows Hotspot
+        '192.168.43.1',  // Android Hotspot
+        '192.168.2.1',   // macOS Hotspot
+      ];
+      for (final ip in commonHotspotIps) {
+        try {
+          final client = http.Client();
+          await client.get(Uri.parse('http://$ip:8000/')).timeout(const Duration(milliseconds: 1500));
+          _overrideBaseUrl = 'http://$ip:8000/api/v1';
+          debugPrint("Discovered server via gateway scan: $_overrideBaseUrl");
+          client.close();
+          return;
+        } catch (_) {}
+      }
+    }
+
+    // Attempt UDP Discovery
+    if (!kIsWeb) {
+      try {
+        final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+        socket.broadcastEnabled = true;
+        
+        final data = utf8.encode("DISCOVER_CURFEWCAM_SERVER");
+        socket.send(data, InternetAddress("255.255.255.255"), 8888);
+        
+        // Wait up to 2 seconds for a response
+        await for (RawSocketEvent event in socket.timeout(const Duration(seconds: 2), onTimeout: (sink) => sink.close())) {
+          if (event == RawSocketEvent.read) {
+            Datagram? dg = socket.receive();
+            if (dg != null) {
+              final reply = utf8.decode(dg.data);
+              if (reply == "CURFEWCAM_SERVER_ACK") {
+                final discoveredIp = dg.address.address;
+                final testUrl = 'http://$discoveredIp:8000/api/v1';
+                
+                // Verify the discovered IP is actually reachable (fixes NAT routing issues)
+                try {
+                  final client = http.Client();
+                  await client.get(Uri.parse('http://$discoveredIp:8000/')).timeout(const Duration(milliseconds: 1000));
+                  _overrideBaseUrl = testUrl;
+                  debugPrint("Discovered server at: $_overrideBaseUrl (UDP)");
+                  client.close();
+                  socket.close();
+                  return;
+                } catch (_) {
+                   debugPrint("UDP discovered $discoveredIp but it is unreachable.");
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint("UDP discovery failed: $e");
+      }
+    }
+  }
+
+  static Future<void> setServerUrl(String url) async {
+    _overrideBaseUrl = url;
+    final prefs = await SharedPreferences.getInstance();
+    if (url.isEmpty) {
+      await prefs.remove('custom_server_url');
+    } else {
+      await prefs.setString('custom_server_url', url);
+    }
+  }
+
+  // Deprecated, use setServerUrl instead
+  static void setOverrideBaseUrl(String url) {
+    _overrideBaseUrl = url;
+  }
 
   static String get baseUrl {
     if (_overrideBaseUrl != null && _overrideBaseUrl!.isNotEmpty) {
@@ -29,10 +126,13 @@ class AuthService {
       return 'http://localhost:$port$apiPrefix';
     }
 
-    // Default to the computer's Wi-Fi network IP address (10.20.17.66) so both
-    // real physical phones on Wi-Fi and emulators can connect without network errors.
-    const networkIp = '10.20.17.66';
-    return 'http://$networkIp:$port$apiPrefix';
+    if (Platform.isAndroid) {
+      // 10.0.2.2 is the special alias to your host loopback interface on Android Emulators.
+      // (Physical devices will use the dynamically discovered IP from UDP instead).
+      return 'http://10.0.2.2:$port$apiPrefix';
+    }
+    
+    return 'http://localhost:$port$apiPrefix';
   }
 
   // ---------------------------------------------------------------------------

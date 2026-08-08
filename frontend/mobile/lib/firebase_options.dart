@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -40,8 +41,8 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA5rBJBkTJSz9xH__vSnHqliz2JwSCK_HY',
+  static FirebaseOptions get web => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_WEB_API_KEY'] ?? '',
     appId: '1:1062082582966:web:a06458539525b94b4dc917',
     messagingSenderId: '1062082582966',
     projectId: 'curfew-cam',
@@ -50,16 +51,16 @@ class DefaultFirebaseOptions {
     measurementId: 'G-TVK0M2D39D',
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyArIPCde-AwIj0BqfZmRrhMBqCUJj0sFCI',
+  static FirebaseOptions get android => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_ANDROID_API_KEY'] ?? '',
     appId: '1:1062082582966:android:f8697321cdb2778e4dc917',
     messagingSenderId: '1062082582966',
     projectId: 'curfew-cam',
     storageBucket: 'curfew-cam.firebasestorage.app',
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBJoq-dfuBjXZIWQv_S4aPlmddgZPnllW4',
+  static FirebaseOptions get ios => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_IOS_API_KEY'] ?? '',
     appId: '1:1062082582966:ios:c930e2ce1d33bece4dc917',
     messagingSenderId: '1062082582966',
     projectId: 'curfew-cam',
@@ -67,8 +68,8 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.curfewcam.curfewcamMobile',
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBJoq-dfuBjXZIWQv_S4aPlmddgZPnllW4',
+  static FirebaseOptions get macos => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_IOS_API_KEY'] ?? '',
     appId: '1:1062082582966:ios:c930e2ce1d33bece4dc917',
     messagingSenderId: '1062082582966',
     projectId: 'curfew-cam',
@@ -76,8 +77,8 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.curfewcam.curfewcamMobile',
   );
 
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyA5rBJBkTJSz9xH__vSnHqliz2JwSCK_HY',
+  static FirebaseOptions get windows => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_WEB_API_KEY'] ?? '',
     appId: '1:1062082582966:web:3bdd99f7798e73184dc917',
     messagingSenderId: '1062082582966',
     projectId: 'curfew-cam',

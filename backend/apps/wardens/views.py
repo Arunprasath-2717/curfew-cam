@@ -104,6 +104,9 @@ class OutpassApprovalView(APIView):
         action = serializer.validated_data['action']
 
         warden_profile = getattr(request.user, 'warden_profile', None)
+        if warden_profile and request.user.role != UserRole.ADMIN_WARDEN:
+            if outpass.student.hostel_block != warden_profile.hostel_name:
+                return error_response('Permission denied: Outpass is not from your hostel block', status_code=403)
 
         from apps.notifications.services import NotificationService
         from apps.notifications.models import Notification
@@ -162,6 +165,9 @@ class OutpassOverrideView(APIView):
         action = serializer.validated_data['action']
 
         warden_profile = getattr(request.user, 'warden_profile', None)
+        if not warden_profile or not warden_profile.is_chief_warden:
+            return error_response('Permission denied: Only a chief warden can override', status_code=403)
+
         if action == 'approve':
             outpass.status = Outpass.Status.APPROVED
         else:

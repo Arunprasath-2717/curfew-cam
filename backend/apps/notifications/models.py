@@ -53,3 +53,17 @@ class Notification(TimeStampedModel):
 
     def __str__(self):
         return f'{self.title} - {self.user.email}'
+
+class Announcement(TimeStampedModel):
+    """Global announcements for all users (notices)."""
+    warden = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='announcements')
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta(TimeStampedModel.Meta):
+        verbose_name = 'Announcement'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title

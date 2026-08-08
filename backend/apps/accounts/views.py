@@ -233,3 +233,58 @@ class UpdateFCMTokenView(APIView):
         request.user.fcm_token = fcm_token
         request.user.save(update_fields=['fcm_token'])
         return success_response(message='FCM token updated successfully')
+
+import pandas as pd
+from django.db import transaction
+
+class StudentBulkUploadView(APIView):
+    """Upload CSV/Excel of students and populate StudentWhitelist."""
+    permission_classes = (permissions.AllowAny,)  # For testing, you can change this to IsAdminUser later
+
+    def post(self, request):
+        file = request.FILES.get('file')
+        if not file:
+            return error_response('No file uploaded.')
+            
+        try:
+            if file.name.endswith('.csv'):
+                df = pd.read_csv(file)
+            elif file.name.endswith('.xlsx'):
+                df = pd.read_excel(file)
+            else:
+                return error_response('Unsupported file format. Please upload .csv or .xlsx')
+                
+            required_columns = {'name', 'register_number', 'department', 'year', 'hostel_block', 'room_number'}
+            if not required_columns.issubset(set(df.columns)):
+                return error_response(f'Missing required columns. Expected: {", ".join(required_columns)}')
+            
+            # Sort/Extract by year as requested
+            df = df.sort_values(by='year')
+            
+            from apps.accounts.models import StudentWhitelist
+            
+            added = 0
+            updated = 0
+            
+            with transaction.atomic():
+                for _, row in df.iterrows():
+                    obj, created = StudentWhitelist.objects.update_or_create(
+                        register_number=str(row['register_number']).strip(),
+                        defaults={
+                            'name': str(row['name']).strip(),
+                            'department': str(row['department']).strip(),
+                            'year': int(row['year']),
+                            'hostel_block': str(row['hostel_block']).strip(),
+                            'room_number': str(row['room_number']).strip(),
+                        }
+                    )
+                    if created:
+                        added += 1
+                    else:
+                        updated += 1
+                        
+            return success_response(message=f'Successfully processed file. Added {added}, updated {updated} students.')
+            
+        except Exception as e:
+            logger.exception("Error processing file")
+            return error_response(f'Error processing file: {str(e)}')

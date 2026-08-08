@@ -11,9 +11,9 @@ from decouple import config as env, Csv
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 # ─── Security ─────────────────────────────────────────────────────
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me')
+SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2,*', cast=Csv())
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2', cast=Csv())
 
 # ─── Application Definition ──────────────────────────────────────
 DJANGO_APPS = [
@@ -92,12 +92,19 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': env('POSTGRES_DB', default='curfewcam'),
-        'USER': env('POSTGRES_USER', default='postgres'),
-        'PASSWORD': env('POSTGRES_PASSWORD', default='postgres'),
+        'USER': env('POSTGRES_USER', default='curfewcam'),
+        'PASSWORD': env('POSTGRES_PASSWORD', default='secretpassword'),
         'HOST': env('POSTGRES_HOST', default='localhost'),
         'PORT': env('POSTGRES_PORT', default='5432'),
     }
 }
+import sys
+if 'test' in sys.argv or 'negative_tests.py' in sys.argv[0]:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
+    ALLOWED_HOSTS.append('testserver')
 
 # ─── Auth ─────────────────────────────────────────────────────────
 AUTH_USER_MODEL = 'accounts.User'
@@ -202,7 +209,7 @@ CORS_ALLOWED_ORIGINS = env(
     default='http://localhost:3000,http://127.0.0.1:3000',
     cast=Csv(),
 )
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 
 # ─── Celery ───────────────────────────────────────────────────────
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
@@ -321,4 +328,4 @@ YOLO_V8X_MODEL_PATH = BASE_DIR / 'models' / 'yolov8x_best.pt'  # Will be used on
 YOLO_CONFIDENCE_THRESHOLD = 0.5
 
 # ─── Camera Stream ────────────────────────────────────────────────
-DETECTION_CAMERA_URL = env('DETECTION_CAMERA_URL', default='http://10.42.0.232:4747/video')
+DETECTION_CAMERA_URL = env('DETECTION_CAMERA_URL', default='')

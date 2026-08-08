@@ -35,6 +35,10 @@ class ComplaintListCreateView(generics.ListCreateAPIView):
 
         if user.role == 'student':
             queryset = queryset.filter(student=user)
+        elif getattr(user, 'role', '') != 'admin_warden':
+            warden_profile = getattr(user, 'warden_profile', None)
+            if warden_profile and not warden_profile.is_chief_warden:
+                queryset = queryset.filter(student__student_profile__hostel_block=warden_profile.hostel_name)
 
         # Filters for wardens
         status_param = self.request.query_params.get('status')
@@ -82,6 +86,11 @@ class ComplaintDetailView(generics.RetrieveAPIView):
         # Ensure student can only view their own complaint unless user is warden
         if request.user.role == 'student' and instance.student != request.user:
             return error_response("You do not have permission to view this complaint.", status_code=403)
+        elif getattr(request.user, 'role', '') != 'admin_warden' and request.user.role != 'student':
+            warden_profile = getattr(request.user, 'warden_profile', None)
+            if warden_profile and not warden_profile.is_chief_warden:
+                if not hasattr(instance.student, 'student_profile') or instance.student.student_profile.hostel_block != warden_profile.hostel_name:
+                    return error_response("Complaint is not from your hostel block.", status_code=403)
 
         serializer = self.get_serializer(instance)
         return success_response(data=serializer.data)
@@ -96,6 +105,14 @@ class ComplaintStatusUpdateView(generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', True)
         instance = self.get_object()
+
+        user = request.user
+        if getattr(user, 'role', '') != 'admin_warden':
+            warden_profile = getattr(user, 'warden_profile', None)
+            if warden_profile and not warden_profile.is_chief_warden:
+                if not hasattr(instance.student, 'student_profile') or instance.student.student_profile.hostel_block != warden_profile.hostel_name:
+                    return error_response("Complaint is not from your hostel block.", status_code=403)
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
         serializer.is_valid(raise_exception=True)
         updated = serializer.save()
@@ -111,6 +128,12 @@ class ComplaintStatsView(APIView):
 
     def get(self, request):
         qs = Complaint.objects.all()
+        user = request.user
+        if getattr(user, 'role', '') != 'admin_warden':
+            warden_profile = getattr(user, 'warden_profile', None)
+            if warden_profile and not warden_profile.is_chief_warden:
+                qs = qs.filter(student__student_profile__hostel_block=warden_profile.hostel_name)
+                
         total = qs.count()
         pending = qs.filter(status=ComplaintStatus.PENDING).count()
         in_progress = qs.filter(status=ComplaintStatus.IN_PROGRESS).count()

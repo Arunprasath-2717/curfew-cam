@@ -56,8 +56,40 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'email', 'username', 'first_name', 'last_name',
             'role', 'phone_number', 'date_of_birth', 'avatar',
             'is_verified', 'date_joined', 'created_at', 'is_main_warden',
+            'department', 'year', 'rollNo', 'room', 'hostel_name', 'employee_id'
         )
         read_only_fields = ('id', 'email', 'is_verified', 'date_joined', 'created_at')
+
+    department = serializers.SerializerMethodField()
+    year = serializers.SerializerMethodField()
+    rollNo = serializers.SerializerMethodField()
+    room = serializers.SerializerMethodField()
+    hostel_name = serializers.SerializerMethodField()
+    employee_id = serializers.SerializerMethodField()
+
+    def get_department(self, obj):
+        if hasattr(obj, 'student_profile'): return obj.student_profile.department
+        return None
+
+    def get_year(self, obj):
+        if hasattr(obj, 'student_profile'): return obj.student_profile.year
+        return None
+
+    def get_rollNo(self, obj):
+        if hasattr(obj, 'student_profile'): return obj.student_profile.register_number
+        return None
+
+    def get_room(self, obj):
+        if hasattr(obj, 'student_profile'): return obj.student_profile.room_number
+        return None
+
+    def get_hostel_name(self, obj):
+        if hasattr(obj, 'warden_profile'): return obj.warden_profile.hostel_name
+        return None
+        
+    def get_employee_id(self, obj):
+        if hasattr(obj, 'warden_profile'): return obj.warden_profile.employee_id
+        return None
 
     def get_is_main_warden(self, obj):
         if obj.role == 'warden' and hasattr(obj, 'warden_profile'):

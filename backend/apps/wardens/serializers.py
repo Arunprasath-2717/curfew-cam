@@ -38,6 +38,8 @@ class ManageStudentSerializer(serializers.Serializer):
     register_number = serializers.CharField(max_length=30)
     department = serializers.CharField(max_length=100)
     year = serializers.IntegerField(min_value=1, max_value=5)
+    hostel_block = serializers.CharField(max_length=100)
+    room_number = serializers.CharField(max_length=100, required=False, allow_blank=True, default='TBD')
 
 class ManageWardenSerializer(serializers.Serializer):
     email = serializers.EmailField()

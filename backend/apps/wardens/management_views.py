@@ -10,14 +10,26 @@ from apps.wardens.serializers import (
 )
 from apps.accounts.models import User, UserRole
 
+def check_chief_warden(request):
+    if getattr(request.user, 'role', '') == UserRole.ADMIN_WARDEN:
+        return None
+    warden_profile = getattr(request.user, 'warden_profile', None)
+    if not warden_profile or not warden_profile.is_chief_warden:
+        return error_response('Permission denied: Chief Warden access required.', status_code=403)
+    return None
+
 class ManageStudentsView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
 
     def get(self, request):
+        err = check_chief_warden(request)
+        if err: return err
         students = StudentProfile.objects.select_related('user').all()
         return success_response(data=StudentProfileSerializer(students, many=True).data)
 
     def post(self, request):
+        err = check_chief_warden(request)
+        if err: return err
         serializer = ManageStudentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -39,8 +51,8 @@ class ManageStudentsView(APIView):
         profile.register_number = data['register_number']
         profile.department = data['department']
         profile.year = data['year']
-        profile.hostel_block = 'TBD'
-        profile.room_number = 'TBD'
+        profile.hostel_block = data['hostel_block']
+        profile.room_number = data.get('room_number', 'TBD')
         profile.save()
         
         AuditLog.objects.create(
@@ -55,6 +67,8 @@ class ManageStudentDetailView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
     
     def delete(self, request, pk):
+        err = check_chief_warden(request)
+        if err: return err
         try:
             student = StudentProfile.objects.select_related('user').get(pk=pk)
         except StudentProfile.DoesNotExist:
@@ -176,6 +190,8 @@ class RunPromotionView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
 
     def post(self, request):
+        err = check_chief_warden(request)
+        if err: return err
         from apps.students.tasks import run_yearly_promotion
         counts = run_yearly_promotion()
         return success_response(
@@ -188,8 +204,12 @@ class BulkImportStudentsView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
 
     def post(self, request):
+        err = check_chief_warden(request)
+        if err: return err
         import csv
         import io
+        import secrets
+        import string
 
         file_data = None
         if 'file' in request.FILES:
@@ -222,7 +242,11 @@ class BulkImportStudentsView(APIView):
                 year_str = clean_row.get('year', '1')
                 hostel = clean_row.get('hostel_block') or clean_row.get('hostel') or clean_row.get('block', 'TBD')
                 room = clean_row.get('room_number') or clean_row.get('room', 'TBD')
-                password = clean_row.get('password') or 'Student@123'
+                
+                # Generate a random password if not provided
+                password = clean_row.get('password')
+                if not password:
+                    password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(10))
 
                 if not email or not reg_no or not first_name:
                     errors.append(f'Row {row_idx}: Missing required fields (email, register_number, first_name)')
@@ -270,12 +294,7 @@ class BulkImportStudentsView(APIView):
                         profile.save()
                     created_count += 1
                 else:
-                    # Update existing profile
-                    user.first_name = first_name
-                    if last_name:
-                        user.last_name = last_name
-                    user.save()
-
+                    # Update existing profile without silently overwriting the first/last name
                     profile, _ = StudentProfile.objects.get_or_create(user=user, defaults={
                         'register_number': reg_no,
                         'department': dept,
@@ -316,6 +335,8 @@ class DeletePassedOutStudentsView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminOrWarden)
 
     def post(self, request):
+        err = check_chief_warden(request)
+        if err: return err
         graduates = StudentProfile.objects.filter(year__gte=4)
         deleted_count = 0
 

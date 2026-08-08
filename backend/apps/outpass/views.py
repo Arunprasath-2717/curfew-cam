@@ -131,6 +131,14 @@ class OutpassReturnView(APIView):
             outpass = Outpass.objects.get(pk=pk)
         except Outpass.DoesNotExist:
             return error_response('Outpass not found', status_code=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+        if getattr(user, 'role', '') == UserRole.STUDENT:
+            if not hasattr(user, 'student_profile') or outpass.student != user.student_profile:
+                return error_response('Permission denied', status_code=status.HTTP_403_FORBIDDEN)
+        elif getattr(user, 'role', '') != 'watchman':
+            return error_response('Only the student or a watchman can return an outpass', status_code=status.HTTP_403_FORBIDDEN)
+
         if outpass.status != Outpass.Status.ACTIVE:
             return error_response('Outpass is not active')
             

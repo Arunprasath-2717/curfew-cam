@@ -54,8 +54,18 @@ def register_user_with_domain_check(validated_data):
 
     if email.endswith('@srishakthi.ac.in'):
         role = UserRole.STUDENT
-        if not validated_data.get('register_number'):
+        register_number = validated_data.get('register_number', '').strip()
+        if not register_number:
             raise ValidationError({'register_number': ["Register number is required for students."]})
+            
+        from apps.accounts.models import StudentWhitelist
+        try:
+            whitelist_entry = StudentWhitelist.objects.get(register_number=register_number)
+        except StudentWhitelist.DoesNotExist:
+            raise ValidationError({'register_number': ["Register number not found in the approved student roster."]})
+            
+        if whitelist_entry.is_claimed:
+            raise ValidationError({'register_number': ["This register number has already been claimed."]})
     else:
         raise ValidationError({'email': ["Only @srishakthi.ac.in domains are allowed for students."]})
 
@@ -81,12 +91,16 @@ def register_user_with_domain_check(validated_data):
         if role == UserRole.STUDENT:
             # Update student profile (created by signal)
             profile = StudentProfile.objects.get(user=user)
-            profile.register_number = validated_data.get('register_number', '').strip()
-            profile.department = validated_data.get('department', '').strip()
-            profile.year = validated_data.get('year') or 1
-            profile.hostel_block = validated_data.get('block', '').strip()
-            profile.room_number = validated_data.get('room_number', '').strip()
+            profile.register_number = whitelist_entry.register_number
+            profile.department = whitelist_entry.department
+            profile.year = whitelist_entry.year or 1
+            profile.hostel_block = whitelist_entry.hostel_block
+            profile.room_number = whitelist_entry.room_number
             profile.save()
+            
+            whitelist_entry.is_claimed = True
+            whitelist_entry.claimed_by = user
+            whitelist_entry.save()
 
     # Generate and send verification OTP
     otp = generate_otp(user.email, purpose='email_verification')

@@ -79,7 +79,9 @@ class StudentWhitelist(models.Model):
     """Whitelist of valid students allowed to register."""
     name = models.CharField(max_length=150)
     register_number = models.CharField(max_length=30, unique=True)
-    block = models.CharField(max_length=50, default='Unknown')
+    department = models.CharField(max_length=100, default='Unknown')
+    year = models.PositiveSmallIntegerField(null=True, blank=True)
+    hostel_block = models.CharField(max_length=50, default='Unknown')
     room_number = models.CharField(max_length=20)
     is_claimed = models.BooleanField(default=False)
     claimed_by = models.ForeignKey(
