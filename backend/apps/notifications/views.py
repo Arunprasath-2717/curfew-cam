@@ -104,7 +104,10 @@ class AnnouncementListCreateView(generics.ListCreateAPIView):
     serializer_class = AnnouncementSerializer
 
     def get_queryset(self):
-        return Announcement.objects.filter(is_active=True)
+        from django.db.models import Q
+        return Announcement.objects.filter(
+            Q(is_active=True) & (Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+        )
 
     def perform_create(self, serializer):
         from rest_framework.exceptions import PermissionDenied

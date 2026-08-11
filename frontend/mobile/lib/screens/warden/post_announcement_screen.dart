@@ -14,6 +14,7 @@ class _PostAnnouncementScreenState extends State<PostAnnouncementScreen> {
   final _titleController = TextEditingController();
   final _messageController = TextEditingController();
   bool _isSubmitting = false;
+  int? _selectedDurationHours;
 
   Future<void> _submit() async {
     if (_titleController.text.trim().isEmpty || _messageController.text.trim().isEmpty) {
@@ -25,6 +26,7 @@ class _PostAnnouncementScreenState extends State<PostAnnouncementScreen> {
     final res = await AnnouncementService.postAnnouncement(
       _titleController.text.trim(),
       _messageController.text.trim(),
+      durationHours: _selectedDurationHours,
     );
     setState(() => _isSubmitting = false);
 
@@ -75,6 +77,18 @@ class _PostAnnouncementScreenState extends State<PostAnnouncementScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
+            const SizedBox(height: 16),
+            Text('Notice Expiration (Optional)', style: AppTextStyles.bodySecondary),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                _buildDurationChip(null, 'Never Expires'),
+                _buildDurationChip(1, '1 Hour'),
+                _buildDurationChip(6, '6 Hours'),
+                _buildDurationChip(24, '24 Hours'),
+              ],
+            ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -92,6 +106,25 @@ class _PostAnnouncementScreenState extends State<PostAnnouncementScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDurationChip(int? hours, String label) {
+    final isSelected = _selectedDurationHours == hours;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (val) {
+        if (val) setState(() => _selectedDurationHours = hours);
+      },
+      selectedColor: AppColors.accentBlue.withValues(alpha: 0.2),
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.accentBlue : AppColors.textPrimary,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      side: BorderSide(
+        color: isSelected ? AppColors.accentBlue : AppColors.inputBorder,
       ),
     );
   }

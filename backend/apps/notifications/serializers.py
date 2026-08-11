@@ -23,8 +23,19 @@ class NotificationMarkReadSerializer(serializers.Serializer):
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     warden_name = serializers.CharField(source='warden.get_full_name', read_only=True)
+    duration_hours = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Announcement
-        fields = ('id', 'warden', 'warden_name', 'title', 'message', 'is_active', 'created_at')
-        read_only_fields = ('id', 'warden', 'created_at')
+        fields = ('id', 'warden', 'warden_name', 'title', 'message', 'is_active', 'expires_at', 'duration_hours', 'created_at')
+        read_only_fields = ('id', 'warden', 'created_at', 'expires_at')
+
+    def create(self, validated_data):
+        duration_hours = validated_data.pop('duration_hours', None)
+        instance = super().create(validated_data)
+        if duration_hours:
+            from django.utils import timezone
+            from datetime import timedelta
+            instance.expires_at = timezone.now() + timedelta(hours=duration_hours)
+            instance.save(update_fields=['expires_at'])
+        return instance

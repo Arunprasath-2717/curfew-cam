@@ -7,6 +7,7 @@ import '../../widgets/status_chip.dart';
 import '../../providers/outpass_provider.dart';
 import '../../providers/auth_service.dart';
 import '../../services/announcement_service.dart';
+import '../../services/push_notification_service.dart';
 import 'dart:async';
 
 class StudentDashboardScreen extends StatefulWidget {
@@ -73,6 +74,20 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
 
       setState(() {
         _activeRequest = (currentRes['success'] == true) ? currentRes['data'] : null;
+        
+        if (_activeRequest != null && _activeRequest!['status'] == 'ACTIVE') {
+          final expectedDateStr = _activeRequest!['expected_return_date'];
+          final expectedTimeStr = _activeRequest!['expected_return_time'];
+          if (expectedDateStr != null && expectedTimeStr != null) {
+            final expectedReturn = DateTime.tryParse('$expectedDateStr $expectedTimeStr');
+            if (expectedReturn != null) {
+              PushNotificationService().scheduleOutpassReminder(expectedReturn);
+            }
+          }
+        } else {
+          PushNotificationService().cancelScheduledReminders();
+        }
+
         if (historyRes['success'] == true && historyRes['data'] is List) {
           _recentRequests = (historyRes['data'] as List).take(3).toList();
         }

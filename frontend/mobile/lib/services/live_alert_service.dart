@@ -15,7 +15,7 @@ class LiveAlertService {
     if (_isPolling) return;
     _isPolling = true;
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) => checkLiveAlerts());
+    _pollTimer = Timer.periodic(const Duration(seconds: 60), (_) => checkLiveAlerts());
   }
 
   /// Stop polling
@@ -38,18 +38,23 @@ class LiveAlertService {
           list = res['data']['results'] as List;
         }
 
+        bool showedNotification = false;
+
         for (final item in list) {
           final m = Map<String, dynamic>.from(item);
           final id = m['id']?.toString() ?? '';
           if (id.isNotEmpty && !_seenNotificationIds.contains(id)) {
             _seenNotificationIds.add(id);
             
-            // Trigger OS System Mobile Notification (Status bar / Notification Shade)
-            PushNotificationService().showSystemNotification(
-              title: m['title'] ?? 'System Alert',
-              body: m['message'] ?? '',
-              data: m,
-            );
+            if (!showedNotification) {
+              // Trigger OS System Mobile Notification (Status bar / Notification Shade)
+              PushNotificationService().showSystemNotification(
+                title: m['title'] ?? 'System Alert',
+                body: m['message'] ?? '',
+                data: m,
+              );
+              showedNotification = true;
+            }
           }
         }
       }

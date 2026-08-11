@@ -121,6 +121,7 @@ def send_fcm_notification_async(notification_id):
                     default_sound=True,
                     default_vibrate_timings=True,
                     visibility='public',
+                    click_action='FLUTTER_NOTIFICATION_CLICK',
                 ),
             ),
             apns=messaging.APNSConfig(

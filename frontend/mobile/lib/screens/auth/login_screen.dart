@@ -6,7 +6,6 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/primary_button.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/auth_service.dart';
-import 'package:local_auth/local_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _errorMessage;
-  final LocalAuthentication _localAuth = LocalAuthentication();
 
   @override
   void initState() {
@@ -47,27 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _handleBiometricLogin() async {
-    try {
-      final bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await _localAuth.isDeviceSupported();
-      if (!canAuthenticate) return;
-
-      final bool didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Please authenticate to login',
-        biometricOnly: true,
-      );
-
-      if (didAuthenticate) {
-        _emailController.text = 'admin@test.com';
-        _passwordController.text = 'testpass';
-        await _handleLogin('admin_warden');
-      }
-    } catch (e) {
-      debugPrint('Biometric error: $e');
-    }
   }
 
   Future<void> _handleLogin([String? overrideRole]) async {
@@ -225,32 +202,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 32),
 
                       // 4. Submit Button
-                      Row(
-                        children: [
-                          Expanded(
-                            child: PrimaryButton(
-                              label: 'Login',
-                              icon: Icons.arrow_forward,
-                              isLoading: _isLoading,
-                              onPressed: _handleLogin,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          InkWell(
-                            onTap: _handleBiometricLogin,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              height: 56,
-                              width: 56,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Theme.of(context).primaryColor),
-                              ),
-                              child: Icon(Icons.fingerprint, color: Theme.of(context).primaryColor, size: 32),
-                            ),
-                          ),
-                        ],
+                      SizedBox(
+                        width: double.infinity,
+                        child: PrimaryButton(
+                          label: 'Login',
+                          icon: Icons.arrow_forward,
+                          isLoading: _isLoading,
+                          onPressed: _handleLogin,
+                        ),
                       ),
                       
                       if (_selectedTabIndex == 0) ...[

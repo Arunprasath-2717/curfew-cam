@@ -60,6 +60,7 @@ class Announcement(TimeStampedModel):
     title = models.CharField(max_length=200)
     message = models.TextField()
     is_active = models.BooleanField(default=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta(TimeStampedModel.Meta):
         verbose_name = 'Announcement'

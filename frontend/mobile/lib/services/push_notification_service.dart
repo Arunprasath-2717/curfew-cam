@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_timezone/flutter_timezone.dart';
 import '../providers/api_client.dart';
 
 /// Top-level callback for background messages
@@ -26,6 +29,10 @@ class PushNotificationService {
 
   Future<void> initialize() async {
     if (_isInitialized) return;
+
+    tz.initializeTimeZones();
+    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
 
     // 1. Request permissions for iOS and Android 13+
     NotificationSettings settings = await _fcm.requestPermission(
@@ -170,5 +177,35 @@ class PushNotificationService {
     } catch (e) {
       debugPrint('Error sending token to backend: $e');
     }
+  }
+
+  Future<void> scheduleOutpassReminder(DateTime expectedReturn) async {
+    final DateTime reminderTime = expectedReturn.subtract(const Duration(minutes: 15));
+    if (reminderTime.isBefore(DateTime.now())) return;
+
+    const int notificationId = 1001; 
+    
+    await _localNotificationsPlugin.zonedSchedule(
+      notificationId,
+      'Outpass Expiring Soon',
+      'Your outpass expires in 15 minutes. Please return to campus.',
+      tz.TZDateTime.from(reminderTime, tz.local),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          channelDescription: 'This channel is used for important system alerts and notifications.',
+          importance: Importance.max,
+          priority: Priority.max,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  Future<void> cancelScheduledReminders() async {
+    await _localNotificationsPlugin.cancel(1001);
   }
 }
